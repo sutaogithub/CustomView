@@ -43,6 +43,7 @@ public class SelectView extends View{
     public interface onTouchMoveListener{
         void upMove();
         void downMove();
+
     }
     public void setMoveListener(onTouchMoveListener listener){
         mListener=listener;
@@ -67,7 +68,6 @@ public class SelectView extends View{
     }
     public SelectView(Context context) {
         super(context,null);
-
     }
 
     private float mPreY;
