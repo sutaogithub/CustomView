@@ -1,7 +1,5 @@
 package com.cvtouch.customview;
 
-import android.animation.Animator;
-import android.animation.AnimatorListenerAdapter;
 import android.animation.ValueAnimator;
 import android.content.Context;
 import android.graphics.Canvas;
@@ -11,8 +9,9 @@ import android.util.AttributeSet;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.MotionEvent;
-import android.view.VelocityTracker;
 import android.view.View;
+
+import java.util.Calendar;
 
 /**
  * emailTo intern_zhangsutao@cvte.com
@@ -32,10 +31,13 @@ public class MonthSelectView extends View{
     private float mOffset=0;
     private int mRowHeight;
     private int mSelectMonth=-1;
+    private int mNowYear;
+    private int mSelectYear;
     private int mMaxOffset;
     private float mMinOffset;
     private OnSelectedListener mListener;
     private DisplayMetrics mDisplayMetrics;
+    private int  mOneYearWidth;
     public void setOnSelectListener(OnSelectedListener listener){
         mListener=listener;
     }
@@ -50,6 +52,9 @@ public class MonthSelectView extends View{
     public MonthSelectView(Context context, AttributeSet attrs) {
         super(context, attrs);
         mDisplayMetrics = getResources().getDisplayMetrics();
+        Calendar calendar=Calendar.getInstance();
+        mNowYear =calendar.get(Calendar.YEAR);
+        mSelectYear=mNowYear;
     }
 
     @Override
@@ -73,21 +78,28 @@ public class MonthSelectView extends View{
     protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
         super.onLayout(changed, left, top, right, bottom);
         mColumnSize=(float) getWidth()/mVisibleNum;
-        mMinOffset=-(mText.length-mVisibleNum)*mColumnSize;
-        mMaxOffset=0;
+        mMinOffset=-(mText.length-mVisibleNum)*mColumnSize-mText.length*mColumnSize;
+        mMaxOffset= (int) (mText.length*mColumnSize);
+        mOneYearWidth=(int) (mText.length*mColumnSize);
         mRowHeight=getHeight();
-        getOffset();
+        mOffset=getOffset();
     }
 
-    private void getOffset() {
+    private float getOffset() {
+        if(mSelectYear<mNowYear){
+           mNowYear--;
+        }
+        if(mSelectYear>mNowYear){
+            mNowYear++;
+        }
         if(mSelectMonth-mVisibleNum/2>=0&&mSelectMonth+mVisibleNum/2<=11) {
-            mOffset=-(mSelectMonth-mVisibleNum/2)*mColumnSize;
+            return -(mSelectMonth-mVisibleNum/2)*mColumnSize;
+        }else if(mSelectMonth-mVisibleNum/2<0){
+            return Math.abs(mSelectMonth-mVisibleNum/2)*mColumnSize;
+        }else if(mSelectMonth+mVisibleNum/2>11){
+            return getWidth()-(mSelectMonth+mVisibleNum/2-mText.length+1)*mColumnSize-mOneYearWidth;
         }else {
-            if(mSelectMonth<mVisibleNum){
-                mOffset=mMaxOffset;
-            }else {
-                mOffset=mMinOffset;
-            }
+            return mOffset;
         }
     }
 
@@ -96,15 +108,55 @@ public class MonthSelectView extends View{
         super.onDraw(canvas);
         Paint paint =new Paint();
         canvas.drawColor(Color.WHITE);
-        drawText(canvas,paint);
+        drawLastYear(canvas,paint);
+        drawThisYear(canvas,paint);
+        drawNextYear(canvas,paint);
 
     }
+
+    private void drawNextYear(Canvas canvas, Paint paint) {
+        paint.reset();
+        paint.setTextSize(40);
+        paint.setAntiAlias(true);
+        paint.setStyle(Paint.Style.FILL);
+        for(int i = 0;i < mText.length;i++) {
+            paint.setColor(Color.BLACK);
+            if(i==mSelectMonth&&mSelectYear==mNowYear+1){
+                canvas.drawRect(mOffset+mOneYearWidth+mColumnSize * i,0,mOffset+mOneYearWidth+mColumnSize * i+mColumnSize,getHeight(),paint);
+                paint.setColor(Color.WHITE);
+            }
+            //居中显示的关键代码
+            float startX = mOffset+mOneYearWidth+mColumnSize * i + (mColumnSize - paint.measureText(mText[i])) / 2;
+            float startY = mRowHeight / 2 - (paint.ascent() + paint.descent()) / 2;
+            canvas.drawText(mText[i], startX, startY, paint);
+        }
+    }
+
+    private void drawLastYear(Canvas canvas, Paint paint) {
+        paint.reset();
+        paint.setTextSize(40);
+        paint.setAntiAlias(true);
+        paint.setStyle(Paint.Style.FILL);
+        for(int i = 0;i < mText.length;i++) {
+            paint.setColor(Color.BLACK);
+            if(i==mSelectMonth&&mSelectYear==mNowYear-1){
+                canvas.drawRect(mOffset-mOneYearWidth+mColumnSize * i,0,mOffset-mOneYearWidth+mColumnSize * i+mColumnSize,getHeight(),paint);
+                paint.setColor(Color.WHITE);
+            }
+            //居中显示的关键代码
+            float startX = mOffset-mOneYearWidth+mColumnSize * i + (mColumnSize - paint.measureText(mText[i])) / 2;
+            float startY = mRowHeight / 2 - (paint.ascent() + paint.descent()) / 2;
+            canvas.drawText(mText[i], startX, startY, paint);
+        }
+    }
+
     public void setSelectIndex(int month){
         mSelectMonth=month;
-        startAnimation(month);
+//        startAnimation();
+        mOffset=getOffset();
         invalidate();
     }
-    private void drawText(Canvas canvas, Paint paint) {
+    private void drawThisYear(Canvas canvas, Paint paint) {
         paint.reset();
         paint.setTextSize(40);
         paint.setAntiAlias(true);
@@ -112,7 +164,7 @@ public class MonthSelectView extends View{
 
         for(int i = 0;i < mText.length;i++) {
             paint.setColor(Color.BLACK);
-            if(i==mSelectMonth){
+            if(i==mSelectMonth&&mSelectYear==mNowYear){
                 canvas.drawRect(mOffset+mColumnSize * i,0,mOffset+mColumnSize * i+mColumnSize,getHeight(),paint);
                 paint.setColor(Color.WHITE);
             }
@@ -133,7 +185,7 @@ public class MonthSelectView extends View{
         }
     }
 
-    private float mXDown,mXChange,mXFirstDown;
+    private float mXDown,mXChange,mXFirstDown,mAnimOffsetChange;
     private final int SELECT_TRIGGER=8;
     private boolean isSelect=false;
     @Override
@@ -149,21 +201,33 @@ public class MonthSelectView extends View{
                 if(Math.abs(event.getX()-mXFirstDown)>SELECT_TRIGGER){
                     isSelect=false;
                 }
-                if(mXChange>0){
-                    mOffset=mOffset+mXChange<=mMaxOffset? mOffset+=mXChange:mMaxOffset;
-                }else {
-                    mOffset=mOffset+mXChange>=mMinOffset? mOffset+=mXChange:mMinOffset;
-                }
+                scroll(mXChange);
                 mXDown=event.getX();
                 invalidate();
                 break;
             case MotionEvent.ACTION_UP:
                 if(isSelect){
-                    mSelectMonth= (int) ((-mOffset+mXFirstDown)/mColumnSize);
-                    startAnimation(mSelectMonth);
-                    if(mListener!=null){
-                        mListener.onSelected(mSelectMonth);
+                    mSelectYear=mNowYear;
+                    //点击了今年或下一年
+                    if(-mOffset+mXFirstDown>0){
+                        mSelectMonth=(int) ((-mOffset+mXFirstDown)/mColumnSize);
+                        //点击了下一年
+                        if(mSelectMonth>=mText.length){
+                            mSelectMonth%=mText.length;
+                            mSelectYear++;
+                        }
+                    }else {
+                        //点击了去年
+                        mSelectMonth=(int) ((-mOffset+mXFirstDown)/mColumnSize);
+                        mSelectYear--;
+                        mSelectMonth+=mText.length-1;
                     }
+
+                    Log.d("select",mSelectYear+"  "+mSelectMonth);
+                    startAnimation(mXFirstDown);
+//                    if(mListener!=null){
+//                        mListener.onSelected(mSelectMonth);
+//                    }
                     invalidate();
                 }
                 break;
@@ -171,9 +235,27 @@ public class MonthSelectView extends View{
         return true;
     }
 
-    private void startAnimation(int index) {
-        if(mColumnSize!=0&&(index-mVisibleNum/2>=0&&index+mVisibleNum/2<=11)){
-            ValueAnimator animator = ValueAnimator.ofFloat(mOffset,-(index-mVisibleNum/2)*mColumnSize);
+    private void scroll(float distance) {
+        if(distance>0){
+            mOffset=mOffset+mXChange<=mMaxOffset? mOffset+=mXChange:mMaxOffset;
+        }else {
+            mOffset=mOffset+mXChange>=mMinOffset? mOffset+=mXChange:mMinOffset;
+        }
+        //滑到了下一年
+        if(mOffset<=-mOneYearWidth){
+            mOffset+=mOneYearWidth;
+            mNowYear++;
+            //滑到了上一年
+        }else if(mOffset>=mOneYearWidth){
+            mOffset-=mOneYearWidth;
+            mNowYear--;
+        }
+    }
+
+    private void startAnimation(float startX) {
+        int numOfCulumn= (int) (startX/mColumnSize);
+        if(mColumnSize!=0){
+            ValueAnimator animator = ValueAnimator.ofFloat(mOffset,getOffset());
             animator.setDuration(500);
             animator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
                 @Override
@@ -183,9 +265,6 @@ public class MonthSelectView extends View{
                 }
             });
             animator.start();
-        }else {
-            getOffset();
         }
     }
-
 }
