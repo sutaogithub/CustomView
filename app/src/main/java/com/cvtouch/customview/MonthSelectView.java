@@ -1,5 +1,7 @@
 package com.cvtouch.customview;
 
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
 import android.animation.ValueAnimator;
 import android.content.Context;
 import android.graphics.Canvas;
@@ -42,7 +44,7 @@ public class MonthSelectView extends View{
         mListener=listener;
     }
     public interface OnSelectedListener{
-        void onSelected(int position);
+        void onSelected(int year,int position);
     }
 
     public MonthSelectView(Context context) {
@@ -86,12 +88,7 @@ public class MonthSelectView extends View{
     }
 
     private float getOffset() {
-        if(mSelectYear<mNowYear){
-           mNowYear--;
-        }
-        if(mSelectYear>mNowYear){
-            mNowYear++;
-        }
+
         if(mSelectMonth-mVisibleNum/2>=0&&mSelectMonth+mVisibleNum/2<=11) {
             return -(mSelectMonth-mVisibleNum/2)*mColumnSize;
         }else if(mSelectMonth-mVisibleNum/2<0){
@@ -150,11 +147,11 @@ public class MonthSelectView extends View{
         }
     }
 
-    public void setSelectIndex(int month){
+    public void setSelectDate(int year,int month){
+        mSelectYear=year;
         mSelectMonth=month;
-//        startAnimation();
-        mOffset=getOffset();
-        invalidate();
+        startAnimation();
+        Log.d("select",mSelectYear+"  "+mSelectMonth);
     }
     private void drawThisYear(Canvas canvas, Paint paint) {
         paint.reset();
@@ -224,10 +221,10 @@ public class MonthSelectView extends View{
                     }
 
                     Log.d("select",mSelectYear+"  "+mSelectMonth);
-                    startAnimation(mXFirstDown);
-//                    if(mListener!=null){
-//                        mListener.onSelected(mSelectMonth);
-//                    }
+                    startAnimation();
+                    if(mListener!=null){
+                        mListener.onSelected(mSelectYear,mSelectMonth);
+                    }
                     invalidate();
                 }
                 break;
@@ -252,15 +249,28 @@ public class MonthSelectView extends View{
         }
     }
 
-    private void startAnimation(float startX) {
-        int numOfCulumn= (int) (startX/mColumnSize);
+    private void startAnimation() {
         if(mColumnSize!=0){
-            ValueAnimator animator = ValueAnimator.ofFloat(mOffset,getOffset());
+            float animOffset=getOffset();
+            if(mSelectYear>mNowYear){
+                animOffset-=mOneYearWidth;
+            }else if(mSelectYear<mNowYear){
+                animOffset+=mOneYearWidth;
+            }
+            ValueAnimator animator = ValueAnimator.ofFloat(mOffset,animOffset);
             animator.setDuration(500);
             animator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
                 @Override
                 public void onAnimationUpdate(ValueAnimator animation) {
                     mOffset= (float) animation.getAnimatedValue();
+                    invalidate();
+                }
+            });
+            animator.addListener(new AnimatorListenerAdapter() {
+                @Override
+                public void onAnimationEnd(Animator animation) {
+                    mOffset=getOffset();
+                    mNowYear=mSelectYear;
                     invalidate();
                 }
             });

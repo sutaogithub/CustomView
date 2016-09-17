@@ -3,7 +3,6 @@ package com.cvtouch.customview;
 import android.content.Context;
 import android.util.AttributeSet;
 import android.view.LayoutInflater;
-import android.view.View;
 import android.widget.LinearLayout;
 
 /**
@@ -23,18 +22,18 @@ public class CalendarViewT extends LinearLayout {
         LayoutInflater.from(context).inflate(R.layout.calendar_view2_layout, this, true);
                 mCalendar= (CalendarPager) findViewById(R.id.viewpager_calendar);
         mMonthView= (MonthSelectView) findViewById(R.id.view_month);
-        mMonthView.setSelectIndex(mCalendar.getSelectMonth());
+        mMonthView.setSelectDate(mCalendar.getSelectYear(),mCalendar.getSelectMonth());
         mMonthView.setOnSelectListener(new MonthSelectView.OnSelectedListener() {
             @Override
-            public void onSelected(int position) {
-                mCalendar.setMonth( position);
+            public void onSelected(int year, int month) {
+                mCalendar.setDate(year,month);
             }
         });
         mCalendar.setOnDateChangeListener(new CalendarPager.OnDateChangeListener() {
 
             @Override
             public void onDateChange(int year, int month) {
-                mMonthView.setSelectIndex(month);
+                mMonthView.setSelectDate(year,month);
             }
         });
     }

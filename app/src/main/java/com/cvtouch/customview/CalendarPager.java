@@ -173,7 +173,7 @@ public class CalendarPager extends ViewPager{
             mIsChanged = true;
             mNowYear=mList.get(position).getYear();
             mNowMonth=mList.get(position).getMonth();
-            if(mDateChangeListener!=null){
+            if(mDateChangeListener!=null&&position>=FIST_PAGE_INDEX&&position<=LAST_PAGE_INDEX){
                 mDateChangeListener.onDateChange(mNowYear,mNowMonth);
             }
             updateDate(position);

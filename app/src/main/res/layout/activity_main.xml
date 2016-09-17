@@ -10,17 +10,22 @@
     android:orientation="vertical"
     xmlns:android="http://schemas.android.com/apk/res/android">
 
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="match_parent">
-            <com.cvtouch.customview.TimeSelectView
-                android:layout_width="match_parent"
-                android:layout_height="2000dp"
-                android:background="#ffffff"/>
-        </LinearLayout>
+        <!--<LinearLayout-->
+            <!--android:layout_width="match_parent"-->
+            <!--android:layout_height="match_parent">-->
+            <!--<com.cvtouch.customview.TimeSelectView-->
+                <!--android:layout_width="match_parent"-->
+                <!--android:layout_height="2000dp"-->
+                <!--android:background="#ffffff"/>-->
+        <!--</LinearLayout>-->
 
     <!--<com.cvtouch.customview.CalendarViewT-->
         <!--android:layout_width="match_parent"-->
         <!--android:layout_height="match_parent"></com.cvtouch.customview.CalendarViewT>-->
+
+    <com.cvtouch.customview.ScrollTimeView
+        android:layout_width="match_parent"
+        android:layout_height="500dp"
+        android:background="#ffffff"/>
 
 </LinearLayout>

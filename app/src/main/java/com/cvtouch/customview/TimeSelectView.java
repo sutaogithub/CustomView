@@ -11,7 +11,6 @@ import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.LinearLayout;
 
 
@@ -70,6 +69,7 @@ public class TimeSelectView extends View {
         rectStartY= mLineYMargin;
         mMoveTrigger=mDisplayMetrics.density*3;
         mTopScrollTrigger=mDisplayMetrics.density*80;
+        mBtnMoveTrigger=mDisplayMetrics.density*9;
     }
 
     @Override
@@ -95,7 +95,6 @@ public class TimeSelectView extends View {
         paint.setColor(Color.BLACK);
         paint.setStyle(Paint.Style.FILL);
         paint.setAntiAlias(true);
-
         canvas.drawRect(0,rectStartY,getWidth(),rectEndY,paint);
     }
     public void drawButton(Canvas canvas,Paint paint){
@@ -111,14 +110,12 @@ public class TimeSelectView extends View {
         mBottomBtnImg =new Rect(bottomLeft,bottomTop,bottomLeft+ btnSize,bottomTop+ btnSize);
         mBottomBtnArea=new Rect(mBottomBtnImg.left- btnAreaOffset,mBottomBtnImg.top- btnAreaOffset,mBottomBtnImg.right+ btnAreaOffset,mBottomBtnImg.bottom+ btnAreaOffset);
         canvas.drawBitmap(mBtnImg,null,mBottomBtnImg,paint);
-
-//        mClockArea=new Rect(mClockHorOffset,rectStartY+mClockVerOffset,mClockHorOffset+mClockSize,rectStartY+mClockVerOffset+mClockSize);
-//        canvas.drawBitmap(mClockImg,null,mClockArea,paint);
     }
 
 
-    private float mPreY,mToly;
-    private boolean isButton;
+    private float mPreY, mMoveDistance,mBtnMoveTrigger;
+
+    private boolean isButton,isMarginChange;
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         switch (event.getAction()) {
@@ -127,64 +124,75 @@ public class TimeSelectView extends View {
                 break;
             case MotionEvent.ACTION_MOVE:
                 float dy = event.getY() - mPreY;
-                mToly+=dy;
-                if (Math.abs(mToly)>mMoveTrigger&&mTopBtnArea.contains((int) event.getX(), (int) event.getY())) {
-                    isButton=true;
-                    if (dy > 0) {
-                        if (rectEndY-rectStartY >=mMinRectHeight*2 ) {
-                            rectStartY += mMinRectHeight;
+                if(!isMarginChange){
+                    mMoveDistance +=dy;
+                    isMarginChange=false;
+                }
 
-                        }
-                    } else {
-                        if (rectStartY-mMinRectHeight>=mLineYMargin&&rectEndY - rectStartY <= 14*mMinRectHeight) {
-                            LinearLayout.LayoutParams params= (LinearLayout.LayoutParams) getLayoutParams();
-                            Log.d("trigger",event.getY()+params.topMargin+"");
-                            if(event.getY()+params.topMargin<mTopScrollTrigger){
-//                                LinearLayout.LayoutParams params= (LinearLayout.LayoutParams) getLayoutParams();
-                                if(params.topMargin+mMinRectHeight<=0&&params.topMargin+mMinRectHeight>=((View)getParent()).getHeight()-getHeight()){
-                                    params.topMargin+=mMinRectHeight;
-                                }
-                                setLayoutParams(params);
-                                getParent().requestLayout();
+                if (mTopBtnArea.contains((int) event.getX(), (int) event.getY())) {
+                    isButton=true;
+                    if(Math.abs(mMoveDistance)>mBtnMoveTrigger){
+                        mMoveDistance =0;
+                        if (dy > 0) {
+                            if (rectEndY-rectStartY >=mMinRectHeight*2 ) {
+                                rectStartY += mMinRectHeight;
+
                             }
-                            rectStartY -= mMinRectHeight;
-                        }
-                    }
-                    invalidate();
-                } else if (Math.abs(mToly)>mMoveTrigger&&mBottomBtnArea.contains((int) event.getX(), (int) event.getY())) {
-                    isButton=true;
-                    if (dy > 0) {
-                        if (rectEndY-rectStartY <=mMinRectHeight*14) {
-                            rectEndY += mMinRectHeight;
-                        }
-                    } else {
-                        if (rectEndY-rectStartY >=mMinRectHeight*2) {
-                            rectEndY -= mMinRectHeight;
+                        } else {
+                            if (rectStartY-mMinRectHeight>=mLineYMargin&&rectEndY - rectStartY <= 14*mMinRectHeight) {
+                                LinearLayout.LayoutParams params= (LinearLayout.LayoutParams) getLayoutParams();
+                                Log.d("trigger",event.getY()+params.topMargin+"");
+                                if(event.getY()+params.topMargin<mTopScrollTrigger){
+//                                LinearLayout.LayoutParams params= (LinearLayout.LayoutParams) getLayoutParams();
+                                    if(params.topMargin+mMinRectHeight<=0&&params.topMargin+mMinRectHeight>=((View)getParent()).getHeight()-getHeight()){
+                                        params.topMargin+=mMinRectHeight;
+                                    }
+                                    isMarginChange=true;
+                                    setLayoutParams(params);
+                                    getParent().requestLayout();
+                                }
 
+                                rectStartY -= mMinRectHeight;
+                            }
                         }
+                        invalidate();
                     }
-                    invalidate();
+
+                } else if (mBottomBtnArea.contains((int) event.getX(), (int) event.getY())) {
+                    isButton=true;
+                    if(Math.abs(mMoveDistance)>mBtnMoveTrigger){
+                        mMoveDistance =0;
+                        if (dy > 0) {
+                            if (rectEndY-rectStartY <=mMinRectHeight*14) {
+                                rectEndY += mMinRectHeight;
+                            }
+                        } else {
+                            if (rectEndY-rectStartY >=mMinRectHeight*2) {
+                                rectEndY -= mMinRectHeight;
+
+                            }
+                        }
+                        invalidate();
+                    }
                 }else{
-                    if(!isButton&&Math.abs(mToly)>mMoveTrigger){
-                        mToly=0;
+                    if(!isButton&&Math.abs(mMoveDistance)>mMoveTrigger){
+                        mMoveDistance =0;
                         LinearLayout.LayoutParams params= (LinearLayout.LayoutParams) getLayoutParams();
                         if(params.topMargin+dy<=0&&params.topMargin+dy>=((View)getParent()).getHeight()-getHeight()){
                             params.topMargin+=dy;
                         }
                         setLayoutParams(params);
                         getParent().requestLayout();
-//                      invalidate();
                     }
                 }
                 mPreY = event.getY();
                 break;
             case MotionEvent.ACTION_UP:
-                mToly=0;
+                mMoveDistance =0;
+                isMarginChange=false;
                 isButton=false;
                 break;
         }
-
-
         return true;
     }
 }
