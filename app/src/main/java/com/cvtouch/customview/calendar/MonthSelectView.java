@@ -1,4 +1,4 @@
-package com.cvtouch.customview;
+package com.cvtouch.customview.calendar;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
@@ -10,6 +10,7 @@ import android.graphics.Paint;
 import android.util.AttributeSet;
 import android.util.DisplayMetrics;
 import android.util.Log;
+import android.util.TypedValue;
 import android.view.MotionEvent;
 import android.view.View;
 
@@ -26,13 +27,13 @@ public class MonthSelectView extends View{
     private final int DEFAULT_HEIGHT=40;
     private final int DEFAULT_WIDTH=300;
     private float mColumnSize;
-    private int mVisibleNum=7;
-    private int mDivideLineColor= Color.GRAY;
-    private float mDivideLineStroke=1;
-    private String[] mText=new String[]{"一月","二月","三月","四月","五月","六月","七月","八月","九月","十月","十一月","十二月"};
-    private float mOffset=0;
+    private int mVisibleNum;
+    private int mDivideLineColor;
+    private float mDivideLineStroke;
+    private String[] mText;
+    private float mOffset;
     private int mRowHeight;
-    private int mSelectMonth=-1;
+    private int mSelectMonth;
     private int mNowYear;
     private int mSelectYear;
     private int mMaxOffset;
@@ -40,12 +41,11 @@ public class MonthSelectView extends View{
     private OnSelectedListener mListener;
     private DisplayMetrics mDisplayMetrics;
     private int  mOneYearWidth;
-    public void setOnSelectListener(OnSelectedListener listener){
-        mListener=listener;
-    }
-    public interface OnSelectedListener{
-        void onSelected(int year,int position);
-    }
+    private float mTextSize;
+    private int mBackGround;
+    private boolean mHasDivideLine;
+    private long mAninDuration;
+
 
     public MonthSelectView(Context context) {
         this(context,null);
@@ -54,10 +54,65 @@ public class MonthSelectView extends View{
     public MonthSelectView(Context context, AttributeSet attrs) {
         super(context, attrs);
         mDisplayMetrics = getResources().getDisplayMetrics();
+        initParams();
+    }
+    private void initParams() {
         Calendar calendar=Calendar.getInstance();
         mNowYear =calendar.get(Calendar.YEAR);
         mSelectYear=mNowYear;
+        mTextSize=getTextSizeSp(15);
+        //一开始不选择月
+        mSelectMonth=-1;
+        mOffset=0;
+        mText=new String[]{"一月","二月","三月","四月","五月","六月","七月","八月","九月","十月","十一月","十二月"};
+        mDivideLineStroke=1;
+        mDivideLineColor= Color.GRAY;
+        //默认可见月份为7个
+        mVisibleNum=7;
+        mHasDivideLine=false;
+        mBackGround=Color.WHITE;
+        mAninDuration=500;
     }
+    public void setAnimDuration(long time){
+        mAninDuration=time;
+    }
+
+    public void setBackGround(int mBackGround) {
+        this.mBackGround = mBackGround;
+    }
+
+
+
+    public void setVisibleNum(int mVisibleNum) {
+        this.mVisibleNum = mVisibleNum;
+    }
+
+    public void setDivideLineColor(int mDivideLineColor) {
+        this.mDivideLineColor = mDivideLineColor;
+    }
+
+    public void setDivideLineStroke(float mDivideLineStroke) {
+        this.mDivideLineStroke = mDivideLineStroke;
+    }
+
+    public void setText(String[] mText) {
+        if(mText==null||mText.length!=12){
+            return;
+        }
+        this.mText = mText;
+    }
+
+    public void setTextSize(float mTextSize) {
+        this.mTextSize = mTextSize;
+    }
+
+    public void setOnSelectListener(OnSelectedListener listener){
+        mListener=listener;
+    }
+    public interface OnSelectedListener{
+        void onSelected(int year,int position);
+    }
+
 
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
@@ -80,13 +135,19 @@ public class MonthSelectView extends View{
     protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
         super.onLayout(changed, left, top, right, bottom);
         mColumnSize=(float) getWidth()/mVisibleNum;
+        //计算最小偏移量，等于右边显示6-12个月时，中间的一年的offet为它本身的12月加上下一年之前的5个月
         mMinOffset=-(mText.length-mVisibleNum)*mColumnSize-mText.length*mColumnSize;
+        //计算最大偏移量，等于左边显示1-6月时，offset就等于左边12个月乘宽度
         mMaxOffset= (int) (mText.length*mColumnSize);
         mOneYearWidth=(int) (mText.length*mColumnSize);
         mRowHeight=getHeight();
         mOffset=getOffset();
     }
 
+    /**
+     * 获取在一年内时，将选中的月份居中显示的偏移量，
+     * @return
+     */
     private float getOffset() {
 
         if(mSelectMonth-mVisibleNum/2>=0&&mSelectMonth+mVisibleNum/2<=11) {
@@ -104,16 +165,19 @@ public class MonthSelectView extends View{
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
         Paint paint =new Paint();
-        canvas.drawColor(Color.WHITE);
+        canvas.drawColor(mBackGround);
         drawLastYear(canvas,paint);
         drawThisYear(canvas,paint);
         drawNextYear(canvas,paint);
+        if(mHasDivideLine){
+            drawDivideLine(canvas,paint);
+        }
 
     }
 
     private void drawNextYear(Canvas canvas, Paint paint) {
         paint.reset();
-        paint.setTextSize(40);
+        paint.setTextSize(mTextSize);
         paint.setAntiAlias(true);
         paint.setStyle(Paint.Style.FILL);
         for(int i = 0;i < mText.length;i++) {
@@ -131,7 +195,7 @@ public class MonthSelectView extends View{
 
     private void drawLastYear(Canvas canvas, Paint paint) {
         paint.reset();
-        paint.setTextSize(40);
+        paint.setTextSize(mTextSize);
         paint.setAntiAlias(true);
         paint.setStyle(Paint.Style.FILL);
         for(int i = 0;i < mText.length;i++) {
@@ -155,7 +219,7 @@ public class MonthSelectView extends View{
     }
     private void drawThisYear(Canvas canvas, Paint paint) {
         paint.reset();
-        paint.setTextSize(40);
+        paint.setTextSize(mTextSize);
         paint.setAntiAlias(true);
         paint.setStyle(Paint.Style.FILL);
 
@@ -182,7 +246,7 @@ public class MonthSelectView extends View{
         }
     }
 
-    private float mXDown,mXChange,mXFirstDown,mAnimOffsetChange;
+    private float mXDown,mXChange,mXFirstDown;
     private final int SELECT_TRIGGER=8;
     private boolean isSelect=false;
     @Override
@@ -238,11 +302,11 @@ public class MonthSelectView extends View{
         }else {
             mOffset=mOffset+mXChange>=mMinOffset? mOffset+=mXChange:mMinOffset;
         }
-        //滑到了下一年
+        //滑到了下一年,今年已经完全不可见
         if(mOffset<=-mOneYearWidth){
             mOffset+=mOneYearWidth;
             mNowYear++;
-            //滑到了上一年
+            //滑到了上一年，今年已经完全不可见
         }else if(mOffset>=mOneYearWidth){
             mOffset-=mOneYearWidth;
             mNowYear--;
@@ -252,13 +316,15 @@ public class MonthSelectView extends View{
     private void startAnimation() {
         if(mColumnSize!=0){
             float animOffset=getOffset();
+            //计算动画偏移量，因为getOffset是获取一年内选中月份时的偏移量，
+            // 当点击下一年的或上一年的月份时，getOffset时相对于本年内的偏移量，所以还要加上或减去一年的长度才是动画偏移量
             if(mSelectYear>mNowYear){
                 animOffset-=mOneYearWidth;
             }else if(mSelectYear<mNowYear){
                 animOffset+=mOneYearWidth;
             }
             ValueAnimator animator = ValueAnimator.ofFloat(mOffset,animOffset);
-            animator.setDuration(500);
+            animator.setDuration(mAninDuration);
             animator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
                 @Override
                 public void onAnimationUpdate(ValueAnimator animation) {
@@ -269,6 +335,8 @@ public class MonthSelectView extends View{
             animator.addListener(new AnimatorListenerAdapter() {
                 @Override
                 public void onAnimationEnd(Animator animation) {
+                    //动画做完后再调整偏移位置，相当于将中间的一年又扯回到了中间（因为动画的执行中间的12月可能已经不可见了）
+                    //这步主要目的是为了无线轮滑。
                     mOffset=getOffset();
                     mNowYear=mSelectYear;
                     invalidate();
@@ -276,5 +344,9 @@ public class MonthSelectView extends View{
             });
             animator.start();
         }
+    }
+    private float getTextSizeSp(float size){
+        return (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP,
+                size, mDisplayMetrics);
     }
 }

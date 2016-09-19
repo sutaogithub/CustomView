@@ -1,4 +1,4 @@
-package com.cvtouch.customview;
+package com.cvtouch.customview.calendar;
 
 import android.content.Context;
 import android.support.v4.view.PagerAdapter;
@@ -7,7 +7,6 @@ import android.util.AttributeSet;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ScrollView;
 
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -35,6 +34,11 @@ public class CalendarPager extends ViewPager{
     private int mSelectDay;
     private DateView.OnDateSelectListener mSelectListener;
     private  OnDateChangeListener mDateChangeListener;
+
+    protected DateView getDateView(Context context) {
+        return new DateView(context);
+    }
+
     public interface OnDateChangeListener {
        void onDateChange(int year,int month);
     }
@@ -47,7 +51,7 @@ public class CalendarPager extends ViewPager{
         mSelectListener =listener;
     }
     public CalendarPager(Context context) {
-        super(context,null);
+        this(context,null);
     }
 
     public int getSelectYear() {
@@ -72,8 +76,9 @@ public class CalendarPager extends ViewPager{
         mSelectMonth=mNowMonth;
         mSelectDay=mCalendar.get(Calendar.DAY_OF_MONTH);
         DateView.OnDateSelectListener listener=new DateSelectListener();
+        //为了无限轮滑用5张view
         for(int i=0;i<5;i++){
-            DateView view=new DateView(context);
+            DateView view=getDateView(context);
             view.setDateSelectListener(listener);
             view.setSelectDate(mSelectYear,mSelectMonth,mSelectDay);
             mList.add(view);
@@ -83,7 +88,6 @@ public class CalendarPager extends ViewPager{
         mCurrentPagePosition=FIST_PAGE_INDEX;
         updateDate(mCurrentPagePosition);
         setCurrentItem(mCurrentPagePosition, false);
-
     }
 
     private void updateDate(int position) {
@@ -141,6 +145,9 @@ public class CalendarPager extends ViewPager{
 
         @Override
         public int getCount() {
+            if(mList==null){
+                return 0;
+            }
             return mList.size();
         }
 
@@ -212,5 +219,7 @@ public class CalendarPager extends ViewPager{
             }
         }
     }
-
+    public List getPager(){
+        return mList;
+    }
 }

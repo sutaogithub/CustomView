@@ -1,4 +1,4 @@
-package com.cvtouch.customview;
+package com.cvtouch.customview.calendar;
 
 import android.content.Context;
 import android.graphics.Canvas;
@@ -6,6 +6,7 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.util.AttributeSet;
 import android.util.DisplayMetrics;
+import android.util.TypedValue;
 import android.view.View;
 
 /**
@@ -19,10 +20,10 @@ public class WeekView extends View{
     private final int DEFAULT_HEIGHT=20;
     private final int DEFAULT_WIDTH=300;
     private final DisplayMetrics mDisplayMetrics;
-    private float mWeekTextSize=35;
-    private int mWeekTextColor= Color.BLACK;
-    private String[] mWeekText=new String[]{"日","一","二","三","四","五","六"};
-    private int mBackground=0xfff9f9f9;
+    private float mWeekTextSize;
+    private int mWeekTextColor;
+    private String[] mWeekText;
+    private int mBackground;
 
     public WeekView(Context context) {
         this(context,null);
@@ -31,6 +32,26 @@ public class WeekView extends View{
     public WeekView(Context context, AttributeSet attrs) {
         super(context, attrs);
         mDisplayMetrics = getResources().getDisplayMetrics();
+        mWeekTextSize=getTextSizeSp(15);
+        mWeekTextColor=Color.BLACK;
+        mBackground=0xfff9f9f9;
+        mWeekText=new String[]{"日","一","二","三","四","五","六"};
+    }
+
+    public void setWeekText(String[] text){
+        if(text==null||text.length!=7){
+            return;
+        }
+        mWeekText=text;
+    }
+    public void setBackground(int color){
+        mBackground=color;
+    }
+    public void setWeekTextColor(int color){
+        mWeekTextColor=color;
+    }
+    public void setWeekTextSize(float size){
+        mWeekTextSize=size;
     }
 
     @Override
@@ -40,6 +61,12 @@ public class WeekView extends View{
         drawBackGround(canvas,paint);
         drawWeek(canvas,paint);
     }
+
+    /**
+     * 确保在wrap_content时能有最小的大小
+     * @param widthMeasureSpec
+     * @param heightMeasureSpec
+     */
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         int widthSize = MeasureSpec.getSize(widthMeasureSpec);
@@ -75,5 +102,9 @@ public class WeekView extends View{
             int startY =(int) (getHeight()/2 - (paint.ascent() + paint.descent())/2);
             canvas.drawText(text, startX, startY, paint);
         }
+    }
+    private float getTextSizeSp(float size){
+        return (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP,
+                size, mDisplayMetrics);
     }
 }

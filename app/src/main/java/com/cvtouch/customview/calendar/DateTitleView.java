@@ -1,4 +1,4 @@
-package com.cvtouch.customview;
+package com.cvtouch.customview.calendar;
 
 import android.content.Context;
 import android.graphics.Canvas;
@@ -6,6 +6,7 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.util.AttributeSet;
 import android.util.DisplayMetrics;
+import android.util.TypedValue;
 import android.view.View;
 
 import java.util.Calendar;
@@ -22,11 +23,11 @@ public class DateTitleView extends View{
     private final int DEFAULT_HEIGHT=50;
     private final int DEFAULT_WIDTH=300;
     private final DisplayMetrics mDisplayMetrics;
-    private int mTitleSize=70;
-    private int mTitltBackgroud=0xfff9f9f9;
-    private int mTitleTextColor= Color.BLACK;
-    private String[] mTitleText=new String[]{"月","日","周"};
-    private String[] mWeekText=new String[]{"日","一","二","三","四","五","六"};
+    private float mTitleSize;
+    private int mTitltBackgroud;
+    private int mTitleTextColor;
+    private String[] mTitleText;
+    private String[] mWeekText;
     private int mYear;
     private int mMonth;
     private int mDay;
@@ -38,6 +39,52 @@ public class DateTitleView extends View{
     public DateTitleView(Context context, AttributeSet attrs) {
         super(context, attrs);
         mDisplayMetrics = getResources().getDisplayMetrics();
+        initParams();
+    }
+
+
+
+    private void initParams() {
+
+        mTitleText=new String[]{"月","日","周"};
+        mWeekText=new String[]{"日","一","二","三","四","五","六"};
+        mTitltBackgroud=0xfff9f9f9;
+        mTitleSize=getTextSizeSp(20);
+        mTitleTextColor= Color.BLACK;
+    }
+
+    /**
+     * 设置日期文字
+     * @param mTitleText 月，日，周 的文字，要长度为3，并按月，日，周的顺序
+     */
+    public void setTitleText(String[] mTitleText) {
+        if(mTitleText==null||mTitleText.length!=3){
+            return;
+        }
+        this.mTitleText = mTitleText;
+    }
+
+    /**
+     * 设置周几的文字
+     * @param mWeekText 长度必须为7，从周日开始,周六最后
+     */
+    public void setWeekText(String[] mWeekText) {
+        if(mWeekText==null||mWeekText.length!=7){
+            return;
+        }
+        this.mWeekText = mWeekText;
+    }
+
+    public void setTitltBackgroud(int mTitltBackgroud) {
+        this.mTitltBackgroud = mTitltBackgroud;
+    }
+
+    public void setTitleSize(float mTitleSize) {
+        this.mTitleSize = mTitleSize;
+    }
+
+    public void setTitleTextColor(int mTitleTextColor) {
+        this.mTitleTextColor = mTitleTextColor;
     }
 
     @Override
@@ -86,11 +133,18 @@ public class DateTitleView extends View{
         paint.setColor(mTitleTextColor);
         paint.setTextSize(mTitleSize);
         int dayOfWeek=getDayOfWeek(mYear, mMonth,mDay);
-        String title= (mMonth+1) +mTitleText[0]+mDay+mTitleText[1]+" "+mTitleText[2]+mWeekText[dayOfWeek];
-        int fontWidth = (int) paint.measureText(title);
+        StringBuilder builder=new StringBuilder();
+        builder.append(mMonth+1);
+        builder.append(mTitleText[0]);
+        builder.append(mDay);
+        builder.append(mTitleText[1]);
+        builder.append(" ");
+        builder.append(mTitleText[2]);
+        builder.append(mWeekText[dayOfWeek]);
+        int fontWidth = (int) paint.measureText(builder.toString());
         int startX = (getWidth() - fontWidth)/2;
         int startY = (int) (mTitleHeight/2 - (paint.ascent() + paint.descent())/2);
-        canvas.drawText(title, startX, startY, paint);
+        canvas.drawText(builder.toString(), startX, startY, paint);
     }
 
 
@@ -101,4 +155,9 @@ public class DateTitleView extends View{
         mDay=day;
         invalidate();
     }
+    private float getTextSizeSp(float size){
+        return (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP,
+                size, mDisplayMetrics);
+    }
+
 }

@@ -1,4 +1,4 @@
-package com.cvtouch.customview;
+package com.cvtouch.customview.calendar;
 
 import android.content.Context;
 import android.graphics.Canvas;
@@ -7,6 +7,7 @@ import android.graphics.Paint;
 
 import android.util.AttributeSet;
 import android.util.DisplayMetrics;
+import android.util.TypedValue;
 import android.view.MotionEvent;
 import android.view.View;
 
@@ -21,38 +22,41 @@ import java.util.Calendar;
  */
 public class DateView extends View {
 
-    private static final float DEFAULT_LINE_WIDTH =0.5f;
-    private final int DEFAULT_HEIGHT=300;
-    private final int DEFAULT_WIDTH=300;
-    private final float DEFAULT_CIRCLE_RADIUS=20;
-    private final float DEFAULT_WEEKDAY_TEXT_SIZE=15;
-    private  DisplayMetrics mDisplayMetrics;
-    private float mWeekDayRowHeight;
-    private float mColumnSize;
-    private int mSelectColumn,mSelectRow;
-    private int[] mDayNumsAMonth=new int[]{31,28,31,30,31,30,31,31,30,31,30,31};
-    private int mNowYear;
-    private int mNowMon;
-    private int mSelectYear;
-    private int mSelectMon;
-    private int mSelectDay;
-    private Calendar mCalendar;
-    private int mFirstDayWeekNumber;
-    private int mLastDayWeekNumber;
-    private int mRowNum;
-    private int mCircleRadius;
-    private float mWeekDayTextSize;
-    private int mLastMonthTextColor=Color.GRAY;
-    private int mCircleColor=Color.BLACK;
-    private int mWeekDaySelectColor=Color.WHITE;
-    private int mWeekDayColor=Color.BLACK;
-    private int mWeekDayBackground= Color.WHITE;
-    private int mDivideLineColor=Color.GRAY;
-    private float mDivideLineStroke;
-    private int mWeekDayTextYOffset=-30;
-    private OnDateSelectListener mListener;
-    private boolean hasVerticalDivideLine=true;
-    private boolean hasHorizontalDivideLine=true;
+    protected static final float DEFAULT_LINE_WIDTH =0.5f;
+    protected final int DEFAULT_HEIGHT=300;
+    protected final int COLUMN_NUM=7;
+    protected final int DEFAULT_WIDTH=300;
+    protected final float DEFAULT_CIRCLE_RADIUS=20;
+    protected final float DEFAULT_WEEKDAY_TEXT_SIZE=15;
+    protected DisplayMetrics mDisplayMetrics;
+    protected float mWeekDayRowHeight;
+    protected float mColumnSize;
+    protected int mSelectColumn,mSelectRow;
+    protected int[] mDayNumsAMonth;
+    protected int mNowYear;
+    protected int mNowMon;
+    protected int mSelectYear;
+    protected int mSelectMon;
+    protected int mSelectDay;
+    protected Calendar mCalendar;
+    protected int mFirstDayWeekNumber;
+    protected int mLastDayWeekNumber;
+    protected int mRowNum;
+    protected float mCircleRadius;
+    protected float mWeekDayTextSize;
+    protected int mLastMonthTextColor;
+    protected int mCircleColor;
+    protected int mWeekdaySelectColor;
+    protected int mWeekdayTextColor;
+    protected int mWeekDayBackground;
+    protected int mDivideLineColor;
+    protected float mDivideLineStroke;
+    protected OnDateSelectListener mListener;
+    protected boolean hasVerticalDivideLine=true;
+    protected boolean hasHorizontalDivideLine=true;
+    protected float mDownx,mDowny;
+    //用户做滑动时，取消选中事件的，最小滑动距离
+    protected int CANCEL_SELECT_TRIGGER =10;
     public interface OnDateSelectListener{
         void onSelected(int year,int month,int day);
     }
@@ -63,20 +67,89 @@ public class DateView extends View {
         super(context, attrs);
         mDisplayMetrics = getResources().getDisplayMetrics();
         mCalendar=Calendar.getInstance();
+        initParams();
+    }
+
+    protected void initParams() {
         mNowYear =mCalendar.get(Calendar.YEAR);
         mNowMon =mCalendar.get(Calendar.MONTH);
+        mDayNumsAMonth=new int[]{31,28,31,30,31,30,31,31,30,31,30,31};
         mCircleRadius= (int) (mDisplayMetrics.density*DEFAULT_CIRCLE_RADIUS);
-        mWeekDayTextSize=(int) (mDisplayMetrics.density*DEFAULT_WEEKDAY_TEXT_SIZE);
+        mWeekDayTextSize=getTextSizeSp(DEFAULT_WEEKDAY_TEXT_SIZE);
         mDivideLineStroke=(int) (mDisplayMetrics.density*DEFAULT_LINE_WIDTH);
+        hasVerticalDivideLine=true;
+        hasHorizontalDivideLine=true;
+        mLastMonthTextColor=Color.GRAY;
+        mCircleColor=Color.BLACK;
+        mWeekdaySelectColor =Color.WHITE;
+        mWeekdayTextColor=Color.BLACK;
+        mWeekDayBackground= Color.WHITE;
+        mDivideLineColor=Color.GRAY;
         getRowNum();
     }
 
+    public void setHorizontalDivideLine(boolean hasHorizontalDivideLine) {
+        this.hasHorizontalDivideLine = hasHorizontalDivideLine;
+    }
+
+    public void setVerticalDivideLine(boolean hasVerticalDivideLine) {
+        this.hasVerticalDivideLine = hasVerticalDivideLine;
+    }
+    public void setDivideLineStroke(float mDivideLineStroke) {
+        this.mDivideLineStroke = mDivideLineStroke;
+    }
+
+    public void setDivideLineColor(int mDivideLineColor) {
+        this.mDivideLineColor = mDivideLineColor;
+    }
+
+    public void setWeekdayBackground(int mWeekDayBackground) {
+        this.mWeekDayBackground = mWeekDayBackground;
+    }
+
+    public void setWeekdayTextColor(int mWeekDayColor) {
+        this.mWeekdayTextColor = mWeekDayColor;
+    }
+
+    public void setWeekdaySelectColor(int mWeekDaySelectColor) {
+        this.mWeekdaySelectColor = mWeekDaySelectColor;
+    }
+
+    public void setCircleColor(int mCircleColor) {
+        this.mCircleColor = mCircleColor;
+    }
+
+    public void setLastMonthTextColor(int mLastMonthTextColor) {
+        this.mLastMonthTextColor = mLastMonthTextColor;
+        invalidate();
+    }
+
+    public void setWeekdayTextSize(float mWeekDayTextSize) {
+        this.mWeekDayTextSize = mWeekDayTextSize;
+    }
+
+    public void setCircleRadius(float mCircleRadius) {
+        this.mCircleRadius = mCircleRadius;
+    }
+
+    /**
+     * 设置日期
+     * @param year 年
+     * @param month 月 从0开始
+     */
     public void setDate(int year,int month){
         mNowYear=year;
         mNowMon=month;
         getRowNum();
         invalidate();
     }
+
+    /**
+     * 设置选中的日期
+     * @param year
+     * @param month 从0开始
+     * @param day
+     */
     public void setSelectDate(int year,int month,int day){
         mSelectYear=year;
         mSelectMon=month;
@@ -85,7 +158,10 @@ public class DateView extends View {
     }
 
 
-    private void getRowNum() {
+    /**
+     * 求出显示整个月要都多少行
+     */
+    protected void getRowNum() {
         int weekNumber =getDayOfWeek(mNowYear, mNowMon,1);
         int dayOfMon=getMonthDays(mNowYear,mNowMon);
         //超过35天就超过5行
@@ -129,7 +205,7 @@ public class DateView extends View {
 
     }
 
-    private void drawDivideLine(Canvas canvas,Paint paint) {
+    protected void drawDivideLine(Canvas canvas,Paint paint) {
         paint.reset();
         paint.setColor(mDivideLineColor);
         paint.setStrokeWidth(mDivideLineStroke);
@@ -138,11 +214,11 @@ public class DateView extends View {
             for(int i=0;i<=mRowNum;i++){
                 canvas.drawLine(0,i*mWeekDayRowHeight,getWidth(),i*mWeekDayRowHeight,paint);
             }
-            canvas.drawLine(0,getHeight()-mDisplayMetrics.density*1,getWidth(),getHeight()-mDisplayMetrics.density*1,paint);
+            canvas.drawLine(0,getHeight()-mDivideLineStroke,getWidth(),getHeight()-mDivideLineStroke,paint);
         }
         if(hasVerticalDivideLine){
             //画竖线
-            for(int i=0;i<=7;i++){
+            for(int i=0;i<=COLUMN_NUM;i++){
                 canvas.drawLine(i*mColumnSize,0,i*mColumnSize,getHeight(),paint);
             }
         }
@@ -151,17 +227,23 @@ public class DateView extends View {
     @Override
     protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
         super.onLayout(changed, left, top, right, bottom);
-        mColumnSize=(float) getWidth()/7;
+        mColumnSize=(float) getWidth()/COLUMN_NUM;
         mWeekDayRowHeight =(float) getHeight()/mRowNum;
     }
 
-    private void drawBackGround(Canvas canvas, Paint paint) {
+    protected void drawBackGround(Canvas canvas, Paint paint) {
         paint.reset();
         paint.setStyle(Paint.Style.FILL);
         paint.setColor(mWeekDayBackground);
         canvas.drawRect(0,0,getWidth(),getHeight(),paint);
     }
 
+    /**
+     * 获取一个月有多少天
+     * @param year
+     * @param month
+     * @return 一个月的天数
+     */
     public int getMonthDays(int year,int month){
         if((month==2)&&((year%4)==0)&&(year%100)!=0||(year%400==0)){
            return mDayNumsAMonth[month]+1;
@@ -169,11 +251,26 @@ public class DateView extends View {
             return mDayNumsAMonth[month];
         }
     }
+
+    /**
+     * 获取某年某月某日是星期几
+     * 星期日是0，星期一是1以此类推
+     * @param year
+     * @param month
+     * @param day
+     * @return
+     */
     public int getDayOfWeek(int year,int month,int day){
         mCalendar.set(year,month,day);
         return mCalendar.get(Calendar.DAY_OF_WEEK)-1;
     }
-    private void drawWeekDay(Canvas canvas, Paint paint) {
+
+    /**
+     * 画号数
+     * @param canvas
+     * @param paint
+     */
+    protected void drawWeekDay(Canvas canvas, Paint paint) {
         int monthADay=getMonthDays(mNowYear, mNowMon);
         mFirstDayWeekNumber =getDayOfWeek(mNowYear, mNowMon,1);
         mLastDayWeekNumber=getDayOfWeek(mNowYear, mNowMon,monthADay);
@@ -197,21 +294,21 @@ public class DateView extends View {
         //绘制当月的日期
         for(int day = 0;day < monthADay;day++) {
             String dayString = (day + 1) + "";
-            int column = (day + mFirstDayWeekNumber) % 7;
-            int row = (day + mFirstDayWeekNumber) / 7;
+            int column = (day + mFirstDayWeekNumber) % COLUMN_NUM;
+            int row = (day + mFirstDayWeekNumber) / COLUMN_NUM;
             //画选中的日期的背景圆
             if((mSelectDay==day+1)&&(mSelectMon==mNowMon)&&(mSelectYear==mNowYear)){
                 float cx=mColumnSize*column+mColumnSize/2;
                 float cy=mWeekDayRowHeight*row+mWeekDayRowHeight/2;
                 paint.setColor(mCircleColor);
-                canvas.drawCircle(cx,cy+mWeekDayTextYOffset,mCircleRadius,paint);
-                paint.setColor(mWeekDaySelectColor);
+                canvas.drawCircle(cx,cy,mCircleRadius,paint);
+                paint.setColor(mWeekdaySelectColor);
             }else {
-                paint.setColor(mWeekDayColor);
+                paint.setColor(mWeekdayTextColor);
             }
-                //居中显示的关键代码
+            //居中显示的关键代码
             int startX = (int) (mColumnSize * column + (mColumnSize - paint.measureText(dayString)) / 2);
-            int startY = mWeekDayTextYOffset+(int) (mWeekDayRowHeight * row + mWeekDayRowHeight / 2 - (paint.ascent() + paint.descent()) / 2);
+            int startY = (int) (mWeekDayRowHeight * row + mWeekDayRowHeight / 2 - (paint.ascent() + paint.descent()) / 2);
             canvas.drawText(dayString, startX, startY, paint);
 
         }
@@ -219,8 +316,7 @@ public class DateView extends View {
 
 
 
-    private float mDownx,mDowny;
-    private int CANCEL_SELECT_TRIGGER =10;
+
     @Override
     public boolean onTouchEvent(MotionEvent event) {
 
@@ -239,7 +335,8 @@ public class DateView extends View {
                     if(!(mSelectRow<0||(mSelectRow==0&&mSelectColumn<mFirstDayWeekNumber)||(mSelectRow==mRowNum&&mSelectColumn>mLastDayWeekNumber))){
                         mSelectYear=mNowYear;
                         mSelectMon=mNowMon;
-                        mSelectDay=(mSelectRow*7+mSelectColumn)-mFirstDayWeekNumber+1;
+                        //计算几号，计算相对于mFirstDayWeekNumber 之后过了几个格子
+                        mSelectDay=(mSelectRow*COLUMN_NUM+mSelectColumn)-mFirstDayWeekNumber+1;
                         if(mListener!=null){
                             mListener.onSelected(mSelectYear,mSelectMon,mSelectDay);
                         }
@@ -256,5 +353,9 @@ public class DateView extends View {
     }
     public int getMonth(){
         return mNowMon;
+    }
+    protected float getTextSizeSp(float size){
+        return TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP,
+                size, mDisplayMetrics);
     }
 }

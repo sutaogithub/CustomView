@@ -1,38 +1,42 @@
 package com.cvtouch.customview;
+
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.DashPathEffect;
 import android.graphics.Paint;
+import android.graphics.Path;
+import android.graphics.PathEffect;
 import android.graphics.Rect;
+import android.os.Handler;
 import android.util.AttributeSet;
 import android.util.DisplayMetrics;
 import android.util.Log;
+import android.util.TypedValue;
 import android.view.MotionEvent;
+import android.view.VelocityTracker;
 import android.view.View;
-import android.widget.LinearLayout;
-
+import android.view.ViewConfiguration;
+import android.widget.Scroller;
 
 /**
- * emailTo intern_zhangsutao@cvte.com
- *
- * @author zhangsutao
- * @brief 简单的功能介绍
- * @date 2016/9/14
+ * Created by Administrator on 2016/9/16.
  */
 public class TimeSelectView extends View {
-
-    private final DisplayMetrics mDisplayMetrics;
-    private final Bitmap mBtnImg;
-    private final Bitmap mClockImg;
+    private Bitmap mBtnImg,mClockImg;
+    private DisplayMetrics mDisplayMetrics;
     private float mLineYMargin;
-    private int  btnVerOffset;
+    private float mRealHeight;
+    private final float DEFAULT_HEIGHT=1000;
+    private final float DEFAULT_WIDTH=300;
+    private float  btnVerOffset;
     private float  rectStartY;
-    private float mLineInterval;
+    private float  mLineInterval;
     private float  rectEndY;
-    private int  bottomBtnHorOffset;
-    private int  topBtnHorOffset;
+    private float  bottomBtnHorOffset;
+    private float  topBtnHorOffset;
     private int btnSize;
     private int btnAreaOffset;
     private int mClockHorOffset;
@@ -44,155 +48,343 @@ public class TimeSelectView extends View {
     private Rect mBottomBtnArea;
     private Rect mClockArea;
     private float mMinRectHeight;
-    private float mMoveTrigger;
     private float mTopScrollTrigger;
-
+    private float mBtnMoveTrigger;
+    private VelocityTracker mVelocityTracker;
+    private Scroller mScroller;
+    private float mMaxVelocity;
+    private float mLineXMargin;
+    private float mTextSize;
+    private int mLineNum;
+    private int mMaxRectNum;
+    private float mTimeTextXOffset;
+    private int mStartMinute;
+    private int mEndMinute;
+    private float mTimeTextWidth;
+    private float mTimeTextSize;
+    private Handler mHandler;
     public TimeSelectView(Context context) {
         this(context,null);
     }
+
 
     public TimeSelectView(Context context, AttributeSet attrs) {
         super(context, attrs);
         mDisplayMetrics = getResources().getDisplayMetrics();
         mBtnImg = BitmapFactory.decodeResource(context.getResources(),R.drawable.cvt_circle);
         mClockImg = BitmapFactory.decodeResource(context.getResources(),R.drawable.cvt_clock);
-        rectEndY= (int) (mDisplayMetrics.density*75);
-        topBtnHorOffset = (int) (mDisplayMetrics.density*60);
-        bottomBtnHorOffset = (int) (mDisplayMetrics.density*30);
-        btnVerOffset = (int) (mDisplayMetrics.density*17);
-        btnSize = (int) (mDisplayMetrics.density*36);
-        btnAreaOffset =(int) mDisplayMetrics.density*6;
-        mClockHorOffset =(int) mDisplayMetrics.density*2;
-        mClockVerOffset =(int) mDisplayMetrics.density*2;
-        mClockSize=(int) mDisplayMetrics.density*25;
+        mRealHeight =mDisplayMetrics.density*2000;
         mLineYMargin=mDisplayMetrics.density*30;
         rectStartY= mLineYMargin;
-        mMoveTrigger=mDisplayMetrics.density*3;
-        mTopScrollTrigger=mDisplayMetrics.density*80;
-        mBtnMoveTrigger=mDisplayMetrics.density*9;
+        btnVerOffset = mDisplayMetrics.density*17;
+        btnSize = (int) (mDisplayMetrics.density*36);
+        btnAreaOffset =(int) mDisplayMetrics.density*6;
+        mClockSize=(int) mDisplayMetrics.density*25;
+        mTopScrollTrigger=mDisplayMetrics.density*70;
+        mScroller=new Scroller(context);
+        ViewConfiguration configuration = ViewConfiguration.get(context);
+        // 获取TouchSlop值
+        mMaxVelocity=configuration.getScaledMaximumFlingVelocity();
+        mLineXMargin=mDisplayMetrics.density*50;
+        bottomBtnHorOffset =mDisplayMetrics.density*30+mLineXMargin;
+        mClockHorOffset = (int) (mLineXMargin+ mDisplayMetrics.density*10);
+        mClockVerOffset =(int) mDisplayMetrics.density*5;
+        topBtnHorOffset = (int) (mDisplayMetrics.density*60);
+        mTextSize=getTextSizeSp(15);
+        mTimeTextXOffset =mDisplayMetrics.density*50;
+        mTimeTextWidth =mDisplayMetrics.density*15;
+        mTimeTextSize =getTextSizeSp(15);
+        //从0点开始画，画一个整点和半小时，24点不再画半小时
+        mLineNum=2*24+1;
+        mMaxRectNum=mLineNum-1;
+        mHandler=new Handler();
     }
 
     @Override
     protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
         super.onLayout(changed, left, top, right, bottom);
-        mLineInterval= ((float)getHeight()-mLineYMargin*2)/48;
+        mLineInterval= ( mRealHeight -mLineYMargin*2)/(mLineNum-1);
         mMinRectHeight=mLineInterval;
+        mBtnMoveTrigger=mMinRectHeight-30;
+        rectEndY= rectStartY+mMinRectHeight;
+        setTimeRange(5,true,24,false);
+    }
+    @Override
+    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+        int widthSize = MeasureSpec.getSize(widthMeasureSpec);
+        int widthMode = MeasureSpec.getMode(widthMeasureSpec);
+
+        int heightSize = MeasureSpec.getSize(heightMeasureSpec);
+        int heightMode = MeasureSpec.getMode(heightMeasureSpec);
+
+        if(heightMode == MeasureSpec.AT_MOST){
+            heightSize = (int) (mDisplayMetrics.density * DEFAULT_HEIGHT);
+        }
+        if(widthMode == MeasureSpec.AT_MOST){
+            widthSize = (int) (mDisplayMetrics.density * DEFAULT_WIDTH);
+        }
+        setMeasuredDimension(widthSize, heightSize);
     }
 
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
         Paint paint=new Paint();
-        paint.setColor(Color.BLACK);
-        for(int i=0;i<=48;i++){
-            canvas.drawLine(0,mLineYMargin+mLineInterval*i,getWidth(),mLineYMargin+mLineInterval*i,paint);
-        }
-//        drawBlackRect(canvas,paint);
+        drawLine(canvas, paint);
+        drawBlackRect(canvas,paint);
         drawButton(canvas,paint);
+        drawClock(canvas,paint);
+        drawTimeText(canvas,paint);
+
     }
 
-    public void drawBlackRect(Canvas canvas,Paint paint){
+    /**
+     *
+     * @param startHour 开始时间范围0-23
+     * @param startHasHalf 是否有多半小时
+     * @param endHour 结束时间 0-23
+     * @param endHasHalf 是否有多半小时
+     */
+    public void setTimeRange(int startHour,boolean startHasHalf,int endHour,boolean endHasHalf){
+        int start=startHour*2+(startHasHalf?1:0);
+        int end=endHour*2+(endHasHalf?1:0);
+        if(start>=end||start<0||end>mMaxRectNum){
+            return;
+        }
+        mStartMinute=start*30;
+        mEndMinute=end*30;
+        rectStartY=mLineYMargin+start*mMinRectHeight;
+        rectEndY=mLineYMargin+end*mMinRectHeight;
+        invalidate();
+    }
+    private void drawTimeText(Canvas canvas, Paint paint) {
+        paint.reset();
+        paint.setColor(Color.WHITE);
+        paint.setTextSize(mTimeTextSize);
+        StringBuilder builder=new StringBuilder();
+        if(mStartMinute/60<10){
+            builder.append(0);
+        }
+        builder.append(mStartMinute/60);
+        builder.append(":");
+        if(mStartMinute%60<10){
+            builder.append(0);
+        }
+        builder.append(mStartMinute%60);
+        builder.append("  >  ");
+        if(mEndMinute/60<10){
+            builder.append(0);
+        }
+        builder.append(mEndMinute/60);
+        builder.append(":");
+        if(mEndMinute%60<10){
+            builder.append(0);
+        }
+        builder.append(mEndMinute%60);
+        int startX = (int) (mClockArea.right+mTimeTextXOffset+((mTimeTextWidth - paint.measureText(builder.toString())) / 2));
+        int startY = (int) (mClockArea.top+((mClockArea.bottom-mClockArea.top)/2 - (paint.ascent() + paint.descent()) / 2));
+        canvas.drawText(builder.toString(),startX, startY, paint);
+    }
+
+    private void drawClock(Canvas canvas, Paint paint) {
+        paint.reset();
+        mClockArea=new Rect((int)mClockHorOffset,(int)(rectStartY+mClockVerOffset),(int)(mClockHorOffset+mClockSize),(int)(rectStartY+mClockVerOffset+mClockSize));
+        canvas.drawBitmap(mClockImg,null,mClockArea,paint);
+    }
+
+    private void drawBlackRect(Canvas canvas, Paint paint) {
+        paint.reset();
         paint.setColor(Color.BLACK);
         paint.setStyle(Paint.Style.FILL);
-        paint.setAntiAlias(true);
-        canvas.drawRect(0,rectStartY,getWidth(),rectEndY,paint);
+        canvas.drawRect(mLineXMargin,rectStartY,getWidth(),rectEndY,paint);
     }
+
+    private void drawLine(Canvas canvas, Paint paint) {
+        paint.reset();
+        paint.setColor(Color.BLACK);
+        paint.setTextSize(mTextSize);
+        paint.setAntiAlias(true);
+        paint.setStyle(Paint.Style.STROKE);
+        Path path = new Path();
+        PathEffect effects = new DashPathEffect(new float[]{10,10},0);
+        paint.setPathEffect(effects);
+        boolean isFullLine=true;
+        for(int i=0;i<mLineNum;i++){
+            if(isFullLine){
+                canvas.drawLine(mLineXMargin,mLineYMargin+mLineInterval*i,getWidth(),mLineYMargin+mLineInterval*i,paint);
+                //居中显示的关键代码
+                String str=i/2+"时";
+                int startX = (int) ((mLineXMargin - paint.measureText(str)) / 2);
+                int startY = (int) (mLineInterval*i-mMinRectHeight+(int) (mLineYMargin+mMinRectHeight - (paint.ascent() + paint.descent()) / 2));
+                canvas.drawText(str,startX, startY, paint);
+            }else{
+                path.reset();
+                path.moveTo(mLineXMargin, mLineYMargin+mLineInterval*i);
+                path.lineTo(getWidth(),mLineYMargin+mLineInterval*i);
+                canvas.drawPath(path, paint);
+            }
+            isFullLine=!isFullLine;
+        }
+    }
+
     public void drawButton(Canvas canvas,Paint paint){
-        int topLeft=getWidth()- topBtnHorOffset;
+        int topLeft= (int) (getWidth()- topBtnHorOffset);
         int topTop= (int) (rectStartY- btnVerOffset);
         mTopBtnImg =new Rect(topLeft,topTop,topLeft+ btnSize,topTop+ btnSize);
         mTopBtnArea=new Rect(mTopBtnImg.left- btnAreaOffset,mTopBtnImg.top- btnAreaOffset,mTopBtnImg.right+ btnAreaOffset,mTopBtnImg.bottom+ btnAreaOffset);
         canvas.drawBitmap(mBtnImg,null, mTopBtnImg,paint);
-
-
-        int bottomLeft= bottomBtnHorOffset;
+        int bottomLeft= (int) bottomBtnHorOffset;
         int bottomTop= (int) (rectEndY- btnVerOffset);
         mBottomBtnImg =new Rect(bottomLeft,bottomTop,bottomLeft+ btnSize,bottomTop+ btnSize);
         mBottomBtnArea=new Rect(mBottomBtnImg.left- btnAreaOffset,mBottomBtnImg.top- btnAreaOffset,mBottomBtnImg.right+ btnAreaOffset,mBottomBtnImg.bottom+ btnAreaOffset);
         canvas.drawBitmap(mBtnImg,null,mBottomBtnImg,paint);
     }
-
-
-    private float mPreY, mMoveDistance,mBtnMoveTrigger;
-
-    private boolean isButton,isMarginChange;
+    private float mPreY;
+    private int mMoveDistance,mPointerId;
+    private boolean isTopBtn,isBottomBtn,mHasPost;
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        switch (event.getAction()) {
+        acquireVelocityTracker(event);
+        switch (event.getAction()){
             case MotionEvent.ACTION_DOWN:
-                mPreY = event.getY();
+                mPreY=event.getY();
+                mMoveDistance=0;
+                isTopBtn=false;
+                isBottomBtn=false;
+                mPointerId = event.getPointerId(0);
+                if (!mScroller.isFinished()) {
+                    mScroller.abortAnimation();
+                }
                 break;
             case MotionEvent.ACTION_MOVE:
-                float dy = event.getY() - mPreY;
-                if(!isMarginChange){
-                    mMoveDistance +=dy;
-                    isMarginChange=false;
+                if (!mScroller.isFinished()) {
+                    mScroller.abortAnimation();
                 }
-
-                if (mTopBtnArea.contains((int) event.getX(), (int) event.getY())) {
-                    isButton=true;
+                int dy= (int) (event.getY()-mPreY);
+                mMoveDistance+=dy;
+                mVelocityTracker.computeCurrentVelocity(1000, mMaxVelocity);
+                if (mTopBtnArea.contains((int) event.getX(), (int) event.getY()+getScrollY())||isTopBtn) {
+                    isTopBtn=true;
                     if(Math.abs(mMoveDistance)>mBtnMoveTrigger){
                         mMoveDistance =0;
                         if (dy > 0) {
-                            if (rectEndY-rectStartY >=mMinRectHeight*2 ) {
+                            if (rectEndY-rectStartY >=mMinRectHeight*2) {
+                                if(event.getY()>getHeight()-mTopScrollTrigger&&getScrollY()+mMinRectHeight< mRealHeight -getHeight()){
+                                    mScroller.startScroll(0,getScrollY(),0,(int) mMinRectHeight);
+                                }
                                 rectStartY += mMinRectHeight;
-
+                                mStartMinute+=30;
                             }
                         } else {
-                            if (rectStartY-mMinRectHeight>=mLineYMargin&&rectEndY - rectStartY <= 14*mMinRectHeight) {
-                                LinearLayout.LayoutParams params= (LinearLayout.LayoutParams) getLayoutParams();
-                                Log.d("trigger",event.getY()+params.topMargin+"");
-                                if(event.getY()+params.topMargin<mTopScrollTrigger){
-//                                LinearLayout.LayoutParams params= (LinearLayout.LayoutParams) getLayoutParams();
-                                    if(params.topMargin+mMinRectHeight<=0&&params.topMargin+mMinRectHeight>=((View)getParent()).getHeight()-getHeight()){
-                                        params.topMargin+=mMinRectHeight;
-                                    }
-                                    isMarginChange=true;
-                                    setLayoutParams(params);
-                                    getParent().requestLayout();
+                            if (rectStartY-mMinRectHeight>=mLineYMargin&&rectEndY-rectStartY <=mMinRectHeight*mMaxRectNum) {
+                                if(event.getY()<mTopScrollTrigger&&getScrollY()-mMinRectHeight>0){
+//                                scrollBy(0, (int) -mMinRectHeight);
+                                  mScroller.startScroll(0,getScrollY(),0,(int) -mMinRectHeight);
                                 }
-
                                 rectStartY -= mMinRectHeight;
+                                mStartMinute-=30;
                             }
                         }
                         invalidate();
                     }
 
-                } else if (mBottomBtnArea.contains((int) event.getX(), (int) event.getY())) {
-                    isButton=true;
+                } else if (mBottomBtnArea.contains((int) event.getX(), (int) event.getY()+getScrollY())||isBottomBtn) {
+                    isBottomBtn=true;
                     if(Math.abs(mMoveDistance)>mBtnMoveTrigger){
                         mMoveDistance =0;
                         if (dy > 0) {
-                            if (rectEndY-rectStartY <=mMinRectHeight*14) {
+
+                            if (rectEndY +mMinRectHeight<=mRealHeight-mLineYMargin&&rectEndY-rectStartY <=mMinRectHeight*mMaxRectNum) {
+                                if(event.getY()>getHeight()-mTopScrollTrigger&&getScrollY()+mMinRectHeight< mRealHeight -getHeight()){
+//                                    scrollBy(0, (int)mMinRectHeight);
+                                  mScroller.startScroll(0,getScrollY(),0,(int)mMinRectHeight);
+                                }
                                 rectEndY += mMinRectHeight;
+                                mEndMinute+=30;
                             }
                         } else {
                             if (rectEndY-rectStartY >=mMinRectHeight*2) {
+                                if(event.getY()<mTopScrollTrigger&&getScrollY()-mMinRectHeight>0){
+//                                    scrollBy(0, (int) -mMinRectHeight);
+                                  mScroller.startScroll(0,getScrollY(),0,(int) -mMinRectHeight);
+                                }
                                 rectEndY -= mMinRectHeight;
-
+                                mEndMinute-=30;
                             }
                         }
                         invalidate();
                     }
-                }else{
-                    if(!isButton&&Math.abs(mMoveDistance)>mMoveTrigger){
-                        mMoveDistance =0;
-                        LinearLayout.LayoutParams params= (LinearLayout.LayoutParams) getLayoutParams();
-                        if(params.topMargin+dy<=0&&params.topMargin+dy>=((View)getParent()).getHeight()-getHeight()){
-                            params.topMargin+=dy;
-                        }
-                        setLayoutParams(params);
-                        getParent().requestLayout();
-                    }
+                }else if(!(isTopBtn||isBottomBtn)&&getScrollY()-dy>0&&getScrollY()-dy< mRealHeight -getHeight()){
+                    scrollBy(0, -dy);
+                    Log.d("scroll",mRealHeight -getHeight()+"     "+getScrollY());
                 }
-                mPreY = event.getY();
+                mPreY=event.getY();
                 break;
             case MotionEvent.ACTION_UP:
-                mMoveDistance =0;
-                isMarginChange=false;
-                isButton=false;
+                final float velocityY = mVelocityTracker.getYVelocity(mPointerId);
+                releaseVelocityTracker();
+                mState=0;
+                mHasPost=false;
+                mScroller.fling(getScrollX(),getScrollY(),0,-(int)velocityY,0,0,0,(int)(mRealHeight -getHeight()));
+                invalidate();
                 break;
         }
+
         return true;
+    }
+
+    @Override
+    public void computeScroll() {
+        if (mScroller.computeScrollOffset()) {
+            scrollTo(mScroller.getCurrX(), mScroller.getCurrY());
+            invalidate();
+        }
+    }
+    private void releaseVelocityTracker() {
+        if(null != mVelocityTracker) {
+            mVelocityTracker.clear();
+            mVelocityTracker.recycle();
+            mVelocityTracker = null;
+        }
+    }
+    private void acquireVelocityTracker(final MotionEvent event) {
+        if(null == mVelocityTracker) {
+            mVelocityTracker = VelocityTracker.obtain();
+        }
+        mVelocityTracker.addMovement(event);
+    }
+    private float getTextSizeSp(float size){
+        return (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP,
+                size, mDisplayMetrics);
+    }
+
+    private int mState;
+    private final int TOP_BTN_UP=1;
+    private final int TOP_BTN_DOWN=2;
+
+    private class DelayTask implements Runnable{
+        @Override
+        public void run() {
+            switch (mState){
+                case TOP_BTN_UP:
+                    if(getScrollY()-mMinRectHeight>0){
+//                                    scrollBy(0, (int) -mMinRectHeight);
+                        mScroller.startScroll(0,getScrollY(),0,(int) -mMinRectHeight);
+
+                        mHandler.postDelayed(new DelayTask(),500);
+                    }
+                    break;
+                case TOP_BTN_DOWN:
+                    if(rectEndY-rectStartY >=mMinRectHeight*2&&getScrollY()+mMinRectHeight< mRealHeight -getHeight()){
+//                                    scrollBy(0, (int)mMinRectHeight);
+                        mScroller.startScroll(0,getScrollY(),0,(int) mMinRectHeight,1000);
+                        rectStartY += mMinRectHeight;
+                        mStartMinute+=30;
+                        invalidate();
+                        mHandler.postDelayed(new DelayTask(),1000);
+                    }
+                    break;
+            }
+        }
     }
 }

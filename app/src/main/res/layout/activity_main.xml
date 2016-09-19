@@ -1,31 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout android:layout_width="match_parent"
     android:layout_height="match_parent"
+    xmlns:custom="http://schemas.android.com/apk/res-auto"
     android:paddingBottom="@dimen/activity_vertical_margin"
     android:paddingLeft="@dimen/activity_horizontal_margin"
     android:paddingRight="@dimen/activity_horizontal_margin"
     android:layout_centerInParent="true"
-    android:background="#ff0000"
+    android:background="#000000"
     android:paddingTop="@dimen/activity_vertical_margin"
     android:orientation="vertical"
     xmlns:android="http://schemas.android.com/apk/res/android">
 
-        <!--<LinearLayout-->
-            <!--android:layout_width="match_parent"-->
-            <!--android:layout_height="match_parent">-->
-            <!--<com.cvtouch.customview.TimeSelectView-->
-                <!--android:layout_width="match_parent"-->
-                <!--android:layout_height="2000dp"-->
-                <!--android:background="#ffffff"/>-->
-        <!--</LinearLayout>-->
 
-    <!--<com.cvtouch.customview.CalendarViewT-->
-        <!--android:layout_width="match_parent"-->
-        <!--android:layout_height="match_parent"></com.cvtouch.customview.CalendarViewT>-->
-
-    <com.cvtouch.customview.ScrollTimeView
+    <com.cvtouch.customview.calendar.CalendarView
         android:layout_width="match_parent"
-        android:layout_height="500dp"
-        android:background="#ffffff"/>
+        android:layout_height="match_parent"
+        custom:verticalDivideLine="false"
+        custom:weekTextColor="@android:color/holo_blue_bright"/>
+
+    <!--<com.cvtouch.customview.ScrollTimeView-->
+        <!--android:layout_width="match_parent"-->
+        <!--android:layout_height="500dp"-->
+        <!--android:background="#ffffff"/>-->
+    <!--<com.cvtouch.customview.circleimageview.CircularImageView-->
+        <!--android:layout_width="wrap_content"-->
+        <!--android:layout_height="wrap_content"-->
+        <!--android:id="@+id/iv"/>-->
 
 </LinearLayout>

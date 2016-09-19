@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="CalendarView">
+        <attr name="titleBackground" format="color"/>
+        <attr name="titleTextSize" format="dimension"/>
+        <attr name="titleText_Color" format="color"/>
+        <attr name="horizontalDivideLine" format="boolean"/>
+        <attr name="verticalDivideLine" format="boolean"/>
+        <attr name="divideLineStroke" format="dimension"/>
+        <attr name="divideLineColor" format="dimension"/>
+        <attr name="weekdayBackground" format="color"/>
+        <attr name="weekdayTextColor" format="color"/>
+        <attr name="weekdaySelectColor" format="color"/>
+        <attr name="circleColor" format="color"/>
+        <attr name="lastMonthTextColor" format="color"/>
+        <attr name="weekdayTextSize" format="dimension"/>
+        <attr name="circleRadius" format="dimension"/>
+        <attr name="titleHeightWeight" format="dimension"/>
+        <attr name="weekHeightWeight" format="dimension"/>
+        <attr name="weekBackground" format="color"/>
+        <attr name="weekTextSize" format="dimension"/>
+        <attr name="weekTextColor" format="color"/>
+        <attr name="meetingString" format="string"/>
+        <attr name="meetingTextSize" format="dimension"/>
+        <attr name="meetingTextColor" format="color"/>
+        <attr name="selectRectColor" format="color"/>
+        <attr name="notThisMonthColor" format="color"/>
+        <attr name="monthHeightWeight" format="integer"/>
+    </declare-styleable>
+</resources>
