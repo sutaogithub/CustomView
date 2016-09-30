@@ -17,46 +17,81 @@ import java.util.Calendar;
  * emailTo intern_zhangsutao@cvte.com
  *
  * @author zhangsutao
- * @brief 简单的功能介绍
+ * @brief 一
  * @date 2016/9/10
  */
 public class DateView extends View {
 
-    protected static final float DEFAULT_LINE_WIDTH =0.5f;
+    //默认的分割线宽度
+    protected final float DEFAULT_LINE_WIDTH =0.5f;
+    //在wrap_content时的高度dp
     protected final int DEFAULT_HEIGHT=300;
-    protected final int COLUMN_NUM=7;
+    //在wrap_content时的宽度dp
     protected final int DEFAULT_WIDTH=300;
+    //列的数量，一周7天，共7列
+    protected final int COLUMN_NUM=7;
+    //用户做滑动时，取消选中事件的，最小滑动距离
+    protected final int CANCEL_SELECT_TRIGGER =10;
+    //默认的选中圆的大小
     protected final float DEFAULT_CIRCLE_RADIUS=20;
+    //默认的日期的字体大小
     protected final float DEFAULT_WEEKDAY_TEXT_SIZE=15;
     protected DisplayMetrics mDisplayMetrics;
+    //一行的高度
     protected float mWeekDayRowHeight;
+    //一列的宽度
     protected float mColumnSize;
+    //被选择的列和行号
     protected int mSelectColumn,mSelectRow;
+    //一个月有多少天,不包括闰年
     protected int[] mDayNumsAMonth;
+    //当前年份
     protected int mNowYear;
+    //当前月份
     protected int mNowMon;
+    //选择的年
     protected int mSelectYear;
+    //选择的月
     protected int mSelectMon;
+    //选择的天
     protected int mSelectDay;
+    //提供日期
     protected Calendar mCalendar;
+    //一个月第一天星期几
     protected int mFirstDayWeekNumber;
+    //一个月最后一天星期几
     protected int mLastDayWeekNumber;
+    //行的数量，一般是5行或者6行
     protected int mRowNum;
+    //圆的半径
     protected float mCircleRadius;
+    //日期的字体大小
     protected float mWeekDayTextSize;
+    //上个月的日子的字体
     protected int mLastMonthTextColor;
+    //选中圆的颜色
     protected int mCircleColor;
+    //日期被选中后的颜色
     protected int mWeekdaySelectColor;
+    //本月日期的颜色
     protected int mWeekdayTextColor;
+    //日期背景
     protected int mWeekDayBackground;
+    //分割线的颜色
     protected int mDivideLineColor;
+    //分割线的宽度
     protected float mDivideLineStroke;
+    //日期选中的监听
     protected OnDateSelectListener mListener;
+    //控制是否有竖直的分割线
     protected boolean hasVerticalDivideLine=true;
+    //控制是否有水平的分割线
     protected boolean hasHorizontalDivideLine=true;
+    //点击x，y
     protected float mDownx,mDowny;
-    //用户做滑动时，取消选中事件的，最小滑动距离
-    protected int CANCEL_SELECT_TRIGGER =10;
+    //日期的字符，避免重复创建
+    private String[] mDayText;
+
     public interface OnDateSelectListener{
         void onSelected(int year,int month,int day);
     }
@@ -86,6 +121,10 @@ public class DateView extends View {
         mWeekDayBackground= Color.WHITE;
         mDivideLineColor=Color.GRAY;
         getRowNum();
+        mDayText=new String[31];
+        for(int i=0;i<mDayText.length;i++){
+            mDayText[i]=(i+1)+"";
+        }
     }
 
     public void setHorizontalDivideLine(boolean hasHorizontalDivideLine) {
@@ -245,7 +284,7 @@ public class DateView extends View {
      * @return 一个月的天数
      */
     public int getMonthDays(int year,int month){
-        if((month==2)&&((year%4)==0)&&(year%100)!=0||(year%400==0)){
+        if((month==1)&&((year%4)==0)&&(year%100)!=0||(year%400==0)){
            return mDayNumsAMonth[month]+1;
         }else{
             return mDayNumsAMonth[month];
@@ -293,7 +332,7 @@ public class DateView extends View {
         }
         //绘制当月的日期
         for(int day = 0;day < monthADay;day++) {
-            String dayString = (day + 1) + "";
+            String dayString = mDayText[day];
             int column = (day + mFirstDayWeekNumber) % COLUMN_NUM;
             int row = (day + mFirstDayWeekNumber) / COLUMN_NUM;
             //画选中的日期的背景圆

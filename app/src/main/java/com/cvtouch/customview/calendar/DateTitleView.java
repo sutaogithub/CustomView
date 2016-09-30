@@ -15,23 +15,32 @@ import java.util.Calendar;
  * emailTo intern_zhangsutao@cvte.com
  *
  * @author zhangsutao
- * @brief 简单的功能介绍
+ * @brief 日历标题控件
  * @date 2016/9/13
  */
 public class DateTitleView extends View{
 
+    //wrap_content的高度
     private final int DEFAULT_HEIGHT=50;
+    //wrap_content的宽度
     private final int DEFAULT_WIDTH=300;
     private final DisplayMetrics mDisplayMetrics;
-    private float mTitleSize;
+    //文字大小
+    private float mTitleTextSize;
+    //背景
     private int mTitltBackgroud;
+    //文字颜色
     private int mTitleTextColor;
+    //标题的文字
     private String[] mTitleText;
+    //标题的周几的文字
     private String[] mWeekText;
     private int mYear;
     private int mMonth;
     private int mDay;
+    //标题高度
     private int mTitleHeight;
+    private StringBuilder builder;
 
     public DateTitleView(Context context) {
         this(context,null);
@@ -49,7 +58,7 @@ public class DateTitleView extends View{
         mTitleText=new String[]{"月","日","周"};
         mWeekText=new String[]{"日","一","二","三","四","五","六"};
         mTitltBackgroud=0xfff9f9f9;
-        mTitleSize=getTextSizeSp(20);
+        mTitleTextSize =getTextSizeSp(20);
         mTitleTextColor= Color.BLACK;
     }
 
@@ -80,7 +89,7 @@ public class DateTitleView extends View{
     }
 
     public void setTitleSize(float mTitleSize) {
-        this.mTitleSize = mTitleSize;
+        this.mTitleTextSize = mTitleSize;
     }
 
     public void setTitleTextColor(int mTitleTextColor) {
@@ -131,9 +140,13 @@ public class DateTitleView extends View{
     private void drawTitle(Canvas canvas, Paint paint) {
         paint.reset();
         paint.setColor(mTitleTextColor);
-        paint.setTextSize(mTitleSize);
+        paint.setTextSize(mTitleTextSize);
         int dayOfWeek=getDayOfWeek(mYear, mMonth,mDay);
-        StringBuilder builder=new StringBuilder();
+        if(builder==null){
+            builder=new StringBuilder();
+        }else {
+            builder.delete(0,builder.length());
+        }
         builder.append(mMonth+1);
         builder.append(mTitleText[0]);
         builder.append(mDay);
@@ -159,5 +172,4 @@ public class DateTitleView extends View{
         return (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP,
                 size, mDisplayMetrics);
     }
-
 }

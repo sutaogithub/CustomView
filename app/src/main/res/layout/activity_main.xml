@@ -1,23 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout android:layout_width="match_parent"
     android:layout_height="match_parent"
-    xmlns:custom="http://schemas.android.com/apk/res-auto"
-    android:paddingBottom="@dimen/activity_vertical_margin"
-    android:paddingLeft="@dimen/activity_horizontal_margin"
-    android:paddingRight="@dimen/activity_horizontal_margin"
     android:layout_centerInParent="true"
-    android:background="#000000"
-    android:paddingTop="@dimen/activity_vertical_margin"
     android:orientation="vertical"
     xmlns:android="http://schemas.android.com/apk/res/android">
 
 
-    <com.cvtouch.customview.calendar.CalendarView
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        custom:verticalDivideLine="false"
-        custom:weekTextColor="@android:color/holo_blue_bright"/>
+    <!--<com.cvtouch.customview.calendar.CalendarView-->
+        <!--android:layout_width="match_parent"-->
+        <!--android:layout_height="match_parent"-->
+        <!--custom:verticalDivideLine="false"-->
+        <!--android:id="@+id/calendar"-->
+        <!--custom:weekHeightWeight="1"/>-->
 
+    <com.cvtouch.customview.MyFrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
     <!--<com.cvtouch.customview.ScrollTimeView-->
         <!--android:layout_width="match_parent"-->
         <!--android:layout_height="500dp"-->
@@ -25,6 +23,20 @@
     <!--<com.cvtouch.customview.circleimageview.CircularImageView-->
         <!--android:layout_width="wrap_content"-->
         <!--android:layout_height="wrap_content"-->
+        <!--android:background="#ffffff"-->
         <!--android:id="@+id/iv"/>-->
 
+    <!--<EditText-->
+        <!--android:layout_width="match_parent"-->
+        <!--android:layout_height="wrap_content"-->
+        <!--android:id="@+id/et"/>-->
+    <!--<Button-->
+        <!--android:layout_width="wrap_content"-->
+        <!--android:layout_height="wrap_content"-->
+        <!--android:text="转拼音"-->
+        <!--android:onClick="transfer"/>-->
+    <!--<TextView-->
+        <!--android:layout_width="wrap_content"-->
+        <!--android:layout_height="wrap_content"-->
+        <!--android:id="@+id/tv"/>-->
 </LinearLayout>

@@ -24,9 +24,6 @@ import android.widget.Scroller;
  * Created by Administrator on 2016/9/16.
  */
 public class ScrollTimeView extends View {
-
-
-
     private Bitmap mBtnImg,mClockImg;
     private DisplayMetrics mDisplayMetrics;
     private float mLineYMargin;
@@ -328,10 +325,8 @@ public class ScrollTimeView extends View {
 //                Log.d("scroll",velocityY+"");
                 mScroller.fling(getScrollX(),getScrollY(),0,-(int)velocityY,0,0,0,(int)(mRealHeight -getHeight()));
                 invalidate();
-
                 break;
         }
-
         return true;
     }
 

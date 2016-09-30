@@ -16,24 +16,24 @@ import java.util.List;
  * emailTo intern_zhangsutao@cvte.com
  *
  * @author zhangsutao
- * @brief 简单的功能介绍
+ * @brief
  * @date 2016/9/13
  */
 public class CalendarPager extends ViewPager{
 
-    private final int FIST_PAGE_INDEX=1;
-    private final int LAST_PAGE_INDEX=3;
-    private List<DateView> mList;
-    private int mCurrentPagePosition;
-    private boolean mIsChanged;
-    private Calendar mCalendar;
-    private int mNowMonth;
-    private int mNowYear;
-    private int mSelectYear;
-    private int mSelectMonth;
-    private int mSelectDay;
-    private DateView.OnDateSelectListener mSelectListener;
-    private  OnDateChangeListener mDateChangeListener;
+    protected final int FIST_PAGE_INDEX=1;
+    protected final int LAST_PAGE_INDEX=3;
+    protected List<DateView> mList;
+    protected int mCurrentPagePosition;
+    protected boolean mIsChanged;
+    protected Calendar mCalendar;
+    protected int mNowMonth;
+    protected int mNowYear;
+    protected int mSelectYear;
+    protected int mSelectMonth;
+    protected int mSelectDay;
+    protected DateView.OnDateSelectListener mSelectListener;
+    protected  OnDateChangeListener mDateChangeListener;
 
     protected DateView getDateView(Context context) {
         return new DateView(context);
@@ -90,7 +90,7 @@ public class CalendarPager extends ViewPager{
         setCurrentItem(mCurrentPagePosition, false);
     }
 
-    private void updateDate(int position) {
+    protected void updateDate(int position) {
         if(position<1||position>3){
             return;
         }
@@ -204,7 +204,7 @@ public class CalendarPager extends ViewPager{
         }
     }
 
-    private class DateSelectListener implements DateView.OnDateSelectListener{
+    protected class DateSelectListener implements DateView.OnDateSelectListener{
 
         @Override
         public void onSelected(int year, int month, int day) {

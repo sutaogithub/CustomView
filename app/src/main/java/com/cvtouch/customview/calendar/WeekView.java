@@ -13,16 +13,22 @@ import android.view.View;
  * emailTo intern_zhangsutao@cvte.com
  *
  * @author zhangsutao
- * @brief 简单的功能介绍
+ * @brief 星期显示
  * @date 2016/9/13
  */
 public class WeekView extends View{
+    //wrap_content时的默认高度
     private final int DEFAULT_HEIGHT=20;
+    //wrap_content时的默认宽度
     private final int DEFAULT_WIDTH=300;
     private final DisplayMetrics mDisplayMetrics;
+    //周几的文字大小
     private float mWeekTextSize;
+    //周几的文字颜色
     private int mWeekTextColor;
+    //周几的文字，避免反复创建
     private String[] mWeekText;
+    //背景
     private int mBackground;
 
     public WeekView(Context context) {
@@ -40,18 +46,22 @@ public class WeekView extends View{
 
     public void setWeekText(String[] text){
         if(text==null||text.length!=7){
-            return;
+            throw new IllegalArgumentException("the text array's length must be 7");
         }
         mWeekText=text;
+
     }
     public void setBackground(int color){
         mBackground=color;
+
     }
     public void setWeekTextColor(int color){
         mWeekTextColor=color;
+
     }
     public void setWeekTextSize(float size){
         mWeekTextSize=size;
+
     }
 
     @Override

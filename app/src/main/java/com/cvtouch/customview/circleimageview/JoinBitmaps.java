@@ -1,9 +1,11 @@
 package com.cvtouch.customview.circleimageview;
 
 import java.util.List;
+import java.util.ResourceBundle;
 
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.PorterDuff;
@@ -51,7 +53,6 @@ public class JoinBitmaps {
 
         for (int index = 0; index < bitmaps.size(); index++) {
             Bitmap bitmap = bitmaps.get(index);
-
             // MATRIX
             Matrix matrix = new Matrix();
             // scale as destination
@@ -87,8 +88,7 @@ public class JoinBitmaps {
         Canvas canvas = new Canvas(output);
         final Paint paint = new Paint();
         paint.setAntiAlias(true);// 抗锯齿
-        paint.setFilterBitmap(true);
-        int color=paint.getColor();
+        paint.setFilterBitmap(true);//加图像滤波
         int center = Math.round(viewBoxW / 2f);
         canvas.drawCircle(center, center, center, paint);
 

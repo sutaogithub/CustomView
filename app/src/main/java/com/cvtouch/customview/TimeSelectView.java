@@ -10,7 +10,6 @@ import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.PathEffect;
 import android.graphics.Rect;
-import android.os.Handler;
 import android.util.AttributeSet;
 import android.util.DisplayMetrics;
 import android.util.Log;
@@ -20,7 +19,6 @@ import android.view.VelocityTracker;
 import android.view.View;
 import android.view.ViewConfiguration;
 import android.widget.Scroller;
-
 /**
  * Created by Administrator on 2016/9/16.
  */
@@ -48,7 +46,6 @@ public class TimeSelectView extends View {
     private Rect mBottomBtnArea;
     private Rect mClockArea;
     private float mMinRectHeight;
-    private float mTopScrollTrigger;
     private float mBtnMoveTrigger;
     private VelocityTracker mVelocityTracker;
     private Scroller mScroller;
@@ -62,7 +59,9 @@ public class TimeSelectView extends View {
     private int mEndMinute;
     private float mTimeTextWidth;
     private float mTimeTextSize;
-    private Handler mHandler;
+    private int mPreScrollX;
+    private int mTotalScroll;
+
     public TimeSelectView(Context context) {
         this(context,null);
     }
@@ -80,7 +79,6 @@ public class TimeSelectView extends View {
         btnSize = (int) (mDisplayMetrics.density*36);
         btnAreaOffset =(int) mDisplayMetrics.density*6;
         mClockSize=(int) mDisplayMetrics.density*25;
-        mTopScrollTrigger=mDisplayMetrics.density*70;
         mScroller=new Scroller(context);
         ViewConfiguration configuration = ViewConfiguration.get(context);
         // 获取TouchSlop值
@@ -97,7 +95,6 @@ public class TimeSelectView extends View {
         //从0点开始画，画一个整点和半小时，24点不再画半小时
         mLineNum=2*24+1;
         mMaxRectNum=mLineNum-1;
-        mHandler=new Handler();
     }
 
     @Override
@@ -241,7 +238,7 @@ public class TimeSelectView extends View {
     }
     private float mPreY;
     private int mMoveDistance,mPointerId;
-    private boolean isTopBtn,isBottomBtn,mHasPost;
+    private boolean isTopBtn,isBottomBtn;
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         acquireVelocityTracker(event);
@@ -262,25 +259,25 @@ public class TimeSelectView extends View {
                 }
                 int dy= (int) (event.getY()-mPreY);
                 mMoveDistance+=dy;
+                if(mScroller.isFinished()&&event.getY()<0){
+                    final float velocityY = mVelocityTracker.getYVelocity();
+                    Log.d("testsd",velocityY+"  ");
+//                  mScroller.fling(getScrollX(),getScrollY(),0,-3000,0,0,0,(int)(mRealHeight -getHeight()));
+                    mScroller.startScroll(getScrollX(),getScrollY(),0,0-getScrollY(),2000);
+                }
                 mVelocityTracker.computeCurrentVelocity(1000, mMaxVelocity);
                 if (mTopBtnArea.contains((int) event.getX(), (int) event.getY()+getScrollY())||isTopBtn) {
                     isTopBtn=true;
+
                     if(Math.abs(mMoveDistance)>mBtnMoveTrigger){
                         mMoveDistance =0;
                         if (dy > 0) {
                             if (rectEndY-rectStartY >=mMinRectHeight*2) {
-                                if(event.getY()>getHeight()-mTopScrollTrigger&&getScrollY()+mMinRectHeight< mRealHeight -getHeight()){
-                                    mScroller.startScroll(0,getScrollY(),0,(int) mMinRectHeight);
-                                }
                                 rectStartY += mMinRectHeight;
                                 mStartMinute+=30;
                             }
                         } else {
                             if (rectStartY-mMinRectHeight>=mLineYMargin&&rectEndY-rectStartY <=mMinRectHeight*mMaxRectNum) {
-                                if(event.getY()<mTopScrollTrigger&&getScrollY()-mMinRectHeight>0){
-//                                scrollBy(0, (int) -mMinRectHeight);
-                                  mScroller.startScroll(0,getScrollY(),0,(int) -mMinRectHeight);
-                                }
                                 rectStartY -= mMinRectHeight;
                                 mStartMinute-=30;
                             }
@@ -293,21 +290,12 @@ public class TimeSelectView extends View {
                     if(Math.abs(mMoveDistance)>mBtnMoveTrigger){
                         mMoveDistance =0;
                         if (dy > 0) {
-
                             if (rectEndY +mMinRectHeight<=mRealHeight-mLineYMargin&&rectEndY-rectStartY <=mMinRectHeight*mMaxRectNum) {
-                                if(event.getY()>getHeight()-mTopScrollTrigger&&getScrollY()+mMinRectHeight< mRealHeight -getHeight()){
-//                                    scrollBy(0, (int)mMinRectHeight);
-                                  mScroller.startScroll(0,getScrollY(),0,(int)mMinRectHeight);
-                                }
                                 rectEndY += mMinRectHeight;
                                 mEndMinute+=30;
                             }
                         } else {
                             if (rectEndY-rectStartY >=mMinRectHeight*2) {
-                                if(event.getY()<mTopScrollTrigger&&getScrollY()-mMinRectHeight>0){
-//                                    scrollBy(0, (int) -mMinRectHeight);
-                                  mScroller.startScroll(0,getScrollY(),0,(int) -mMinRectHeight);
-                                }
                                 rectEndY -= mMinRectHeight;
                                 mEndMinute-=30;
                             }
@@ -323,8 +311,6 @@ public class TimeSelectView extends View {
             case MotionEvent.ACTION_UP:
                 final float velocityY = mVelocityTracker.getYVelocity(mPointerId);
                 releaseVelocityTracker();
-                mState=0;
-                mHasPost=false;
                 mScroller.fling(getScrollX(),getScrollY(),0,-(int)velocityY,0,0,0,(int)(mRealHeight -getHeight()));
                 invalidate();
                 break;
@@ -337,6 +323,10 @@ public class TimeSelectView extends View {
     public void computeScroll() {
         if (mScroller.computeScrollOffset()) {
             scrollTo(mScroller.getCurrX(), mScroller.getCurrY());
+//            if(isTopBtn){
+//                mTotalScroll+=mScroller.getCurrX()-mPreScrollX;
+//                mPreScrollX=mScroller.getCurrX();
+//            }
             invalidate();
         }
     }
@@ -353,38 +343,8 @@ public class TimeSelectView extends View {
         }
         mVelocityTracker.addMovement(event);
     }
-    private float getTextSizeSp(float size){
+    private float getTextSizeSp(float size) {
         return (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP,
                 size, mDisplayMetrics);
-    }
-
-    private int mState;
-    private final int TOP_BTN_UP=1;
-    private final int TOP_BTN_DOWN=2;
-
-    private class DelayTask implements Runnable{
-        @Override
-        public void run() {
-            switch (mState){
-                case TOP_BTN_UP:
-                    if(getScrollY()-mMinRectHeight>0){
-//                                    scrollBy(0, (int) -mMinRectHeight);
-                        mScroller.startScroll(0,getScrollY(),0,(int) -mMinRectHeight);
-
-                        mHandler.postDelayed(new DelayTask(),500);
-                    }
-                    break;
-                case TOP_BTN_DOWN:
-                    if(rectEndY-rectStartY >=mMinRectHeight*2&&getScrollY()+mMinRectHeight< mRealHeight -getHeight()){
-//                                    scrollBy(0, (int)mMinRectHeight);
-                        mScroller.startScroll(0,getScrollY(),0,(int) mMinRectHeight,1000);
-                        rectStartY += mMinRectHeight;
-                        mStartMinute+=30;
-                        invalidate();
-                        mHandler.postDelayed(new DelayTask(),1000);
-                    }
-                    break;
-            }
-        }
     }
 }

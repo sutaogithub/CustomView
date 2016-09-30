@@ -12,7 +12,10 @@ import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.TypedValue;
 import android.view.MotionEvent;
+import android.view.VelocityTracker;
 import android.view.View;
+import android.view.ViewConfiguration;
+import android.widget.Scroller;
 
 import java.util.Calendar;
 
@@ -20,32 +23,62 @@ import java.util.Calendar;
  * emailTo intern_zhangsutao@cvte.com
  *
  * @author zhangsutao
- * @brief 简单的功能介绍
+ * @brief 底部月份选择条
  * @date 2016/9/12
  */
 public class MonthSelectView extends View{
+    //wrap_content时的默认高度
     private final int DEFAULT_HEIGHT=40;
+    //wrap_content时的默认宽度
     private final int DEFAULT_WIDTH=300;
+    //最大速度
+    private final int MAX_VELOCITY;
+    //每个格子的宽度
     private float mColumnSize;
+    //一个屏幕上可以看见的月份的数量，默认是7
     private int mVisibleNum;
+    //分割线的颜色
     private int mDivideLineColor;
+    //分割线的宽度
     private float mDivideLineStroke;
+    //月份的文字
     private String[] mText;
+    //绘制的偏移量，用来响应左右滑动的效果
     private float mOffset;
+    //行的高度
     private int mRowHeight;
+    //被选择的月份
     private int mSelectMonth;
+    //当前的年份
     private int mNowYear;
+    //被选择的年
     private int mSelectYear;
+    //最大偏移量
     private int mMaxOffset;
+    //最小偏移量
     private float mMinOffset;
     private OnSelectedListener mListener;
     private DisplayMetrics mDisplayMetrics;
+    //一年12个月的宽度
     private int  mOneYearWidth;
+    //文字的大小
     private float mTextSize;
+    //背景
     private int mBackGround;
+    //控制滑动惯性的
+    private Scroller mScroller;
+    private VelocityTracker mVelocityTracker;
+    //用来辅助计算Scroller的滑动增量的变量
+    private int mPreScrollX;
+    //控制是否有分割线，默认没有
     private boolean mHasDivideLine;
-    private long mAninDuration;
+    //动画时间
+    private long mAnimDuration;
 
+
+    public void setDivideLine(boolean flag) {
+        this.mHasDivideLine = flag;
+    }
 
     public MonthSelectView(Context context) {
         this(context,null);
@@ -54,6 +87,10 @@ public class MonthSelectView extends View{
     public MonthSelectView(Context context, AttributeSet attrs) {
         super(context, attrs);
         mDisplayMetrics = getResources().getDisplayMetrics();
+        mScroller=new Scroller(context);
+        ViewConfiguration configuration = ViewConfiguration.get(context);
+        // 获取TouchSlop值
+        MAX_VELOCITY =configuration.getScaledMaximumFlingVelocity();
         initParams();
     }
     private void initParams() {
@@ -71,33 +108,33 @@ public class MonthSelectView extends View{
         mVisibleNum=7;
         mHasDivideLine=false;
         mBackGround=Color.WHITE;
-        mAninDuration=500;
+        mAnimDuration =300;
     }
     public void setAnimDuration(long time){
-        mAninDuration=time;
+        mAnimDuration =time;
     }
 
-    public void setBackGround(int mBackGround) {
-        this.mBackGround = mBackGround;
+    public void setBackGround(int backGround) {
+        this.mBackGround = backGround;
     }
 
 
 
-    public void setVisibleNum(int mVisibleNum) {
-        this.mVisibleNum = mVisibleNum;
+    public void setVisibleNum(int visibleNum) {
+        this.mVisibleNum = visibleNum;
     }
 
-    public void setDivideLineColor(int mDivideLineColor) {
-        this.mDivideLineColor = mDivideLineColor;
+    public void setDivideLineColor(int color) {
+        this.mDivideLineColor = color;
     }
 
-    public void setDivideLineStroke(float mDivideLineStroke) {
-        this.mDivideLineStroke = mDivideLineStroke;
+    public void setDivideLineStroke(float stroke) {
+        this.mDivideLineStroke = stroke;
     }
 
     public void setText(String[] mText) {
         if(mText==null||mText.length!=12){
-            return;
+            throw new IllegalArgumentException("the text array's length must be 12");
         }
         this.mText = mText;
     }
@@ -212,10 +249,10 @@ public class MonthSelectView extends View{
     }
 
     public void setSelectDate(int year,int month){
-        mSelectYear=year;
-        mSelectMonth=month;
-        startAnimation();
-        Log.d("select",mSelectYear+"  "+mSelectMonth);
+            mSelectYear=year;
+            mSelectMonth=month;
+            startAnimation();
+            Log.d("select",mSelectYear+"  "+mSelectMonth);
     }
     private void drawThisYear(Canvas canvas, Paint paint) {
         paint.reset();
@@ -246,23 +283,29 @@ public class MonthSelectView extends View{
         }
     }
 
-    private float mXDown,mXChange,mXFirstDown;
+    private float mXDown,mXFirstDown;
     private final int SELECT_TRIGGER=8;
     private boolean isSelect=false;
     @Override
     public boolean onTouchEvent(MotionEvent event) {
+        acquireVelocityTracker(event);
         switch (event.getAction()){
             case MotionEvent.ACTION_DOWN:
                 mXDown=event.getX();
                 mXFirstDown=event.getX();
                 isSelect=true;
+
+                if (!mScroller.isFinished()) {
+                    mScroller.abortAnimation();
+                }
                 break;
             case MotionEvent.ACTION_MOVE:
-                mXChange=event.getX()-mXDown;
+                float distance=event.getX()-mXDown;
+                mVelocityTracker.computeCurrentVelocity(1000, MAX_VELOCITY);
                 if(Math.abs(event.getX()-mXFirstDown)>SELECT_TRIGGER){
                     isSelect=false;
                 }
-                scroll(mXChange);
+                scroll(distance);
                 mXDown=event.getX();
                 invalidate();
                 break;
@@ -290,17 +333,34 @@ public class MonthSelectView extends View{
                         mListener.onSelected(mSelectYear,mSelectMonth);
                     }
                     invalidate();
+                }else{
+                    final float velocityX = mVelocityTracker.getXVelocity();
+                    releaseVelocityTracker();
+                    Log.d("scroll1","velocityX   "+velocityX);
+                    mScroller.fling(0,0,(int)velocityX,0, -mOneYearWidth,mOneYearWidth,0,0);
+                    invalidate();
                 }
                 break;
         }
         return true;
     }
 
+    @Override
+    public void computeScroll() {
+
+        if (mScroller.computeScrollOffset()) {
+            scroll(mScroller.getCurrX()-mPreScrollX);
+            mPreScrollX=mScroller.getCurrX();
+            invalidate();
+        }else {
+            mPreScrollX=0;
+        }
+    }
     private void scroll(float distance) {
         if(distance>0){
-            mOffset=mOffset+mXChange<=mMaxOffset? mOffset+=mXChange:mMaxOffset;
+            mOffset=mOffset+distance<=mMaxOffset? mOffset+=distance:mMaxOffset;
         }else {
-            mOffset=mOffset+mXChange>=mMinOffset? mOffset+=mXChange:mMinOffset;
+            mOffset=mOffset+distance>=mMinOffset? mOffset+=distance:mMinOffset;
         }
         //滑到了下一年,今年已经完全不可见
         if(mOffset<=-mOneYearWidth){
@@ -313,7 +373,16 @@ public class MonthSelectView extends View{
         }
     }
 
+    private long mLastAnimTime;
     private void startAnimation() {
+        //用户快速滑动时不用动画
+        if(System.currentTimeMillis()-mLastAnimTime< 300){
+            mOffset=getOffset();
+            mNowYear=mSelectYear;
+            invalidate();
+            mLastAnimTime=System.currentTimeMillis();
+            return;
+        }
         if(mColumnSize!=0){
             float animOffset=getOffset();
             //计算动画偏移量，因为getOffset是获取一年内选中月份时的偏移量，
@@ -323,8 +392,11 @@ public class MonthSelectView extends View{
             }else if(mSelectYear<mNowYear){
                 animOffset+=mOneYearWidth;
             }
+            if(animOffset==mOffset){
+                return;
+            }
             ValueAnimator animator = ValueAnimator.ofFloat(mOffset,animOffset);
-            animator.setDuration(mAninDuration);
+            animator.setDuration(mAnimDuration);
             animator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
                 @Override
                 public void onAnimationUpdate(ValueAnimator animation) {
@@ -335,18 +407,35 @@ public class MonthSelectView extends View{
             animator.addListener(new AnimatorListenerAdapter() {
                 @Override
                 public void onAnimationEnd(Animator animation) {
-                    //动画做完后再调整偏移位置，相当于将中间的一年又扯回到了中间（因为动画的执行中间的12月可能已经不可见了）
-                    //这步主要目的是为了无线轮滑。
+                    //动画做完后再调整偏移位置，相当于将中间的一年又扯回到了中间（因为动画的执行完时，中间的12个月份可能已经不可见了）
+                    //这步主要目的是为了无限轮滑。
                     mOffset=getOffset();
                     mNowYear=mSelectYear;
                     invalidate();
                 }
             });
+            mLastAnimTime=System.currentTimeMillis();
             animator.start();
         }
+
     }
     private float getTextSizeSp(float size){
         return (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP,
                 size, mDisplayMetrics);
+    }
+
+
+    private void releaseVelocityTracker() {
+        if(null != mVelocityTracker) {
+            mVelocityTracker.clear();
+            mVelocityTracker.recycle();
+            mVelocityTracker = null;
+        }
+    }
+    private void acquireVelocityTracker(final MotionEvent event) {
+        if(null == mVelocityTracker) {
+            mVelocityTracker = VelocityTracker.obtain();
+        }
+        mVelocityTracker.addMovement(event);
     }
 }

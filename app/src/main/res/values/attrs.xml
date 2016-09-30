@@ -1,30 +1,62 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <declare-styleable name="CalendarView">
+    <declare-styleable name="Calendar">
+        <!--日历最顶部的日期周几的标题属性-->
         <attr name="titleBackground" format="color"/>
         <attr name="titleTextSize" format="dimension"/>
         <attr name="titleText_Color" format="color"/>
-        <attr name="horizontalDivideLine" format="boolean"/>
-        <attr name="verticalDivideLine" format="boolean"/>
-        <attr name="divideLineStroke" format="dimension"/>
-        <attr name="divideLineColor" format="dimension"/>
-        <attr name="weekdayBackground" format="color"/>
-        <attr name="weekdayTextColor" format="color"/>
-        <attr name="weekdaySelectColor" format="color"/>
-        <attr name="circleColor" format="color"/>
-        <attr name="lastMonthTextColor" format="color"/>
-        <attr name="weekdayTextSize" format="dimension"/>
-        <attr name="circleRadius" format="dimension"/>
-        <attr name="titleHeightWeight" format="dimension"/>
-        <attr name="weekHeightWeight" format="dimension"/>
+
+
+        <!--周日到周六的显示条的属性-->
+        <attr name="weekHeightWeight" format="integer"/>
         <attr name="weekBackground" format="color"/>
         <attr name="weekTextSize" format="dimension"/>
         <attr name="weekTextColor" format="color"/>
+
+
+        <!--中间日历部分属性-->
+        <attr name="horizontalDivideLine" format="boolean"/>
+        <attr name="verticalDivideLine" format="boolean"/>
+        <!--分割线的宽度-->
+        <attr name="divideLineStroke" format="dimension"/>
+        <!--分割线的颜色-->
+        <attr name="divideLineColor" format="dimension"/>
+        <!--日历的背景颜色-->
+        <attr name="weekdayBackground" format="color"/>
+        <!--日期文字的颜色-->
+        <attr name="weekdayTextColor" format="color"/>
+        <!--日期被选中时文字的颜色-->
+        <attr name="weekdaySelectColor" format="color"/>
+        <!--选中时绘制的圆的颜色-->
+        <attr name="circleColor" format="color"/>
+        <!--上个月的日期颜色-->
+        <attr name="lastMonthTextColor" format="color"/>
+        <!--日期文字大小-->
+        <attr name="weekdayTextSize" format="dimension"/>
+        <!--选中时绘制的圆的半径-->
+        <attr name="circleRadius" format="dimension"/>
+        <!--日期标题的高度比重-->
+        <attr name="titleHeightWeight" format="integer"/>
+        <!--中间日期占整体高度比重-->
+        <attr name="calendarHeightWeight" format="integer"/>
+
+
+        <!--有显示会议场数的日历的属性-->
+        <!--会议单位的文字，默认是“场”字-->
         <attr name="meetingString" format="string"/>
+        <!--会议数量与单位的文字大小-->
         <attr name="meetingTextSize" format="dimension"/>
+        <!--会议数量与单位的文字颜色-->
         <attr name="meetingTextColor" format="color"/>
+        <!--选中的日期上方的小矩形的高度-->
         <attr name="selectRectColor" format="color"/>
+        <!--在一个月中不是本月的格子的颜色-->
         <attr name="notThisMonthColor" format="color"/>
+        <!--下方的月份选择条的高度比重-->
         <attr name="monthHeightWeight" format="integer"/>
+        <!--日期距离上方分割线的举例-->
+        <attr name="meetingWeekdayTextYOffset" format="dimension"/>
+        <!--会议单位距离会议数量的偏移-->
+        <attr name="meetingStringYOffset" format="dimension"/>
     </declare-styleable>
 </resources>

@@ -222,7 +222,8 @@ public class JoinLayout {
         // Log.d(TAG, "x2:" + x2 + "/y2:" + y2);
 
         // 居中 X轴偏移量
-        float xx1 = (dimension - cd - s1) / 2;
+//        float xx1 = (dimension - cd - s1) / 2;
+        float xx1=0;
         switch (index) {
             case 0:
                 return new float[] { x1 + xx1, y1 + xx1 };
