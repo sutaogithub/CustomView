@@ -59,4 +59,10 @@
         <!--会议单位距离会议数量的偏移-->
         <attr name="meetingStringYOffset" format="dimension"/>
     </declare-styleable>
+    <declare-styleable name="SearchClearEditText">
+        <attr name="hint_iconSize" format="dimension"/>
+        <attr name="hint_textColor" format="color"/>
+        <attr name="hint_textSize" format="dimension"/>
+        <attr name="hintText" format="string"/>
+    </declare-styleable>
 </resources>
