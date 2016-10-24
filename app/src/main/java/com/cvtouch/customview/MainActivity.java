@@ -3,11 +3,13 @@ package com.cvtouch.customview;
 import android.annotation.SuppressLint;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+
 import android.widget.EditText;
 import android.widget.TextView;
 
@@ -21,12 +23,21 @@ import com.cvtouch.customview.hanzitopinyin.HanziToPinyin;
 import java.util.ArrayList;
 import java.util.Calendar;
 
+
 public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        ((TimeSelectView)findViewById(R.id.time_select)).setTimeSelectListener(new TimeSelectView.OnTimeSelectListener() {
+            @Override
+            public void onTimeSelected(int startMinute, int endMinute) {
+                Log.d("ttt", "onTimeSelected: "+startMinute/60+":"+startMinute%60+">>"+endMinute/60+":"+endMinute%60);
+            }
+        });
+
 //        MeetingCalendarView calendarView= (MeetingCalendarView) findViewById(R.id.calendar);
 //        calendarView.setOnDateSelectListener(new DateView.OnDateSelectListener() {
 //            @Override
@@ -35,4 +46,5 @@ public class MainActivity extends AppCompatActivity {
 //            }
 //        });
     }
+
 }

@@ -26,6 +26,11 @@ import android.widget.Scroller;
  */
 public class TimeSelectView extends View {
     private static final String TAG = "TimeSelectView";
+    private final int MINUTE_A_DAY=1440;
+    private final int DEFAULT_LINE_NUMBER=2*24+1;
+    private final int DEFAULT_TEXT_SIZE=15;
+    private final int DEFAULT_LINE_MRAGIN =50;
+    private final int DEFAULT_REAL_HEIGHT=2000;
     private final Paint mPaint;
     private Bitmap mBtnImg,mClockImg;
     private DisplayMetrics mDisplayMetrics;
@@ -61,12 +66,20 @@ public class TimeSelectView extends View {
     private float mTimeTextXOffset;
     private int mStartMinute;
     private int mEndMinute;
-    private float mTimeTextWidth;
     private float mTimeTextSize;
     private int mMinTimeInterval;
+    private OnTimeSelectListener mListener;
 
     public TimeSelectView(Context context) {
         this(context,null);
+    }
+
+    public interface OnTimeSelectListener{
+        void onTimeSelected(int startMinute,int endMinute);
+    }
+
+    public void setTimeSelectListener(OnTimeSelectListener listener){
+        mListener=listener;
     }
 
 
@@ -75,37 +88,28 @@ public class TimeSelectView extends View {
         mDisplayMetrics = getResources().getDisplayMetrics();
         mBtnImg = BitmapFactory.decodeResource(context.getResources(),R.drawable.cvt_circle);
         mClockImg = BitmapFactory.decodeResource(context.getResources(),R.drawable.cvt_clock);
-        mRealHeight =mDisplayMetrics.density*2000;
-        mLineYMargin=mDisplayMetrics.density*30;
+        mRealHeight =mDisplayMetrics.density*DEFAULT_REAL_HEIGHT;
+        mLineYMargin=mDisplayMetrics.density* DEFAULT_LINE_MRAGIN;
+        mLineXMargin=mDisplayMetrics.density* DEFAULT_LINE_MRAGIN;
         mRectStartY = mLineYMargin;
-        btnVerOffset = mDisplayMetrics.density*17;
-        btnSize = (int) (mDisplayMetrics.density*36);
-        btnAreaOffset =(int) mDisplayMetrics.density*6;
-        mClockSize=(int) mDisplayMetrics.density*25;
         mScroller=new Scroller(context);
+        mTextSize=getTextSizeSp(DEFAULT_TEXT_SIZE);
+        mTimeTextSize =getTextSizeSp(DEFAULT_TEXT_SIZE);
         ViewConfiguration configuration = ViewConfiguration.get(context);
         // 获取TouchSlop值
         mMaxVelocity=configuration.getScaledMaximumFlingVelocity();
-        mLineXMargin=mDisplayMetrics.density*50;
-        bottomBtnHorOffset =mDisplayMetrics.density*30+mLineXMargin;
-        mClockHorOffset = (int) (mLineXMargin+ mDisplayMetrics.density*10);
-        mClockVerOffset =(int) mDisplayMetrics.density*5;
-        topBtnHorOffset = (int) (mDisplayMetrics.density*60);
-        mTextSize=getTextSizeSp(15);
-        mTimeTextXOffset =mDisplayMetrics.density*50;
-        mTimeTextWidth =mDisplayMetrics.density*15;
-        mTimeTextSize =getTextSizeSp(15);
+
         //从0点开始画，画一个整点和半小时，24点不再画半小时
-        mLineNum=2*24+1;
+        mLineNum=DEFAULT_LINE_NUMBER;
         mPaint=new Paint();
-
-
-
+        mMinTimeInterval=15;
     }
 
     @Override
     protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
         super.onLayout(changed, left, top, right, bottom);
+        initParams();
+
         mLineInterval= ( mRealHeight -mLineYMargin*2)/(mLineNum-1);
 
         float ratio=(float) 30/mMinTimeInterval;
@@ -114,7 +118,23 @@ public class TimeSelectView extends View {
 
         mBtnMoveTrigger=mMinRectHeight;
         mRectEndY= mRectStartY +mMinRectHeight;
-        setTimeRange(5,true,24,false);
+
+        setTimeRange(5,30,7,30);
+    }
+
+    private void initParams() {
+        bottomBtnHorOffset =mDisplayMetrics.density*30+mLineXMargin;
+        btnVerOffset = mDisplayMetrics.density*17;
+        btnSize = (int) (mDisplayMetrics.density*36);
+        btnAreaOffset =(int) mDisplayMetrics.density*6;
+        mClockSize=(int) mDisplayMetrics.density*25;
+        mTimeTextXOffset =mDisplayMetrics.density*10;
+        mClockHorOffset = (int) (mLineXMargin+ mDisplayMetrics.density*10);
+        mClockVerOffset =(int) mDisplayMetrics.density*5;
+        topBtnHorOffset = (int) (mDisplayMetrics.density*60);
+
+
+        Log.d(TAG, "initParams: ");
     }
 
     public void setMinTimeInterval(int interval){
@@ -151,21 +171,36 @@ public class TimeSelectView extends View {
 
     /**
      *
-     * @param startHour 开始时间范围0-23
-     * @param startHasHalf 是否有多半小时
-     * @param endHour 结束时间 0-23
-     * @param endHasHalf 是否有多半小时
+     * @param startHour
+     * @param startMinute
+     * @param endHour
+     * @param endMinute
      */
-    public void setTimeRange(int startHour,boolean startHasHalf,int endHour,boolean endHasHalf){
-        int start=startHour*2+(startHasHalf?1:0);
-        int end=endHour*2+(endHasHalf?1:0);
-        if(start>=end||start<0||end>mMaxRectNum){
+    public void setTimeRange(int startHour,int startMinute,int endHour,int endMinute){
+        if(startHour<0||startHour>24||endHour<0||endHour>24){
             return;
         }
-        mStartMinute=start*30;
-        mEndMinute=end*30;
-        mRectStartY =mLineYMargin+start*mMinRectHeight;
-        mRectEndY=mLineYMargin+end*mMinRectHeight;
+        if(startMinute<0||startMinute>=60||endMinute<0||endMinute>=60){
+            return;
+        }
+        int start=startHour*60+startMinute;
+        int end=endHour*60+endMinute;
+        if(start>=end){
+            return;
+        }
+        mStartMinute=start;
+        mEndMinute=end;
+
+        if(mListener!=null){
+            mListener.onTimeSelected(mStartMinute,mEndMinute);
+        }
+
+        float startRatio=(float) start/MINUTE_A_DAY;
+        float endRatio=(float) end/MINUTE_A_DAY;
+        float totalHeight=mLineInterval*(mLineNum-1);
+        mRectStartY =mLineYMargin+startRatio*totalHeight;
+        mRectEndY=mLineYMargin+endRatio*totalHeight;
+
         invalidate();
     }
     private void drawTimeText(Canvas canvas, Paint paint) {
@@ -192,7 +227,7 @@ public class TimeSelectView extends View {
             builder.append(0);
         }
         builder.append(mEndMinute%60);
-        int startX = (int) (mClockArea.right+mTimeTextXOffset+((mTimeTextWidth - paint.measureText(builder.toString())) / 2));
+        int startX = (int) (mClockArea.right+mTimeTextXOffset);
         int startY = (int) (mClockArea.top+((mClockArea.bottom-mClockArea.top)/2 - (paint.ascent() + paint.descent()) / 2));
         canvas.drawText(builder.toString(),startX, startY, paint);
     }
@@ -305,11 +340,17 @@ public class TimeSelectView extends View {
                 if (mRectEndY +mMinRectHeight<=mRealHeight-mLineYMargin&&mRectEndY- mRectStartY <=mMinRectHeight*mMaxRectNum) {
                     mRectEndY += mMinRectHeight;
                     mEndMinute+=mMinTimeInterval;
+                    if(mListener!=null){
+                        mListener.onTimeSelected(mStartMinute,mEndMinute);
+                    }
                 }
             } else {
                 if (mRectEndY- mRectStartY >=mMinRectHeight*2) {
                     mRectEndY -= mMinRectHeight;
                     mEndMinute-=mMinTimeInterval;
+                    if(mListener!=null){
+                        mListener.onTimeSelected(mStartMinute,mEndMinute);
+                    }
                 }
             }
             invalidate();
@@ -324,11 +365,17 @@ public class TimeSelectView extends View {
                 if (mRectEndY- mRectStartY >=mMinRectHeight*2) {
                     mRectStartY += mMinRectHeight;
                     mStartMinute+=mMinTimeInterval;
+                    if(mListener!=null){
+                        mListener.onTimeSelected(mStartMinute,mEndMinute);
+                    }
                 }
             } else {
                 if (mRectStartY -mMinRectHeight>=mLineYMargin&&mRectEndY- mRectStartY <=mMinRectHeight*mMaxRectNum) {
                     mRectStartY -= mMinRectHeight;
                     mStartMinute-=mMinTimeInterval;
+                    if(mListener!=null){
+                        mListener.onTimeSelected(mStartMinute,mEndMinute);
+                    }
                 }
             }
             invalidate();
